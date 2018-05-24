@@ -58,6 +58,7 @@ COElk2016c[[lasttablepage]] <- lastpage
 # unlist page elements
 COElk2016d <- unlist(COElk2016c)
 
+######## SEASON ONE ######## 
 # identify season 1 data
 seasonONEstart <- grep(tableheadings[1], COElk2016d)[1]
 seasonONEend <- grep(tableheadings[2], COElk2016d)[1]
@@ -67,54 +68,34 @@ seasonONE <- COElk2016d[((seasonONEstart+1):(seasonONEend-1))]
 removeheaderrows <- grep("2016 Elk Harvest", seasonONE)
 seasonONE <- seasonONE[-removeheaderrows]
 
+# possible column names 
+columnnames <- grep("([:alpha:])", seasonONE)
+# numeric data
+seasonONE1 <- seasonONE[-columnnames]
+columnnames1 <- seasonONE[columnnames]
+columnnames1 <- columnnames1[-length(columnnames1)] # we know the last row is a 'Total' summary, not a name
+columnnames2 <- columnnames1[length(columnnames1)]
+columnnames2 <- str_trim(columnnames2) # remove any extra whitespace
+columnnames3 <- unlist(strsplit(columnnames2,split = "\\s+"))
+colremove <- grep("([.])",columnnames3)
+columnnames3 <- columnnames3[-colremove]
 
+# numeric data
+seasonONE1 <- seasonONE1[-columnnames]
+seasonONE1 <- str_trim(seasonONE1) # remove extra whitespace
+pagenumbers <- grep("\\s+", seasonONE1) # remove page numbers
+seasonONE2 <- seasonONE1[pagenumbers]
 
-# convert to numeric
-seasonONE1 <- matrix(seasonONE)
+# now that it is cleaned up, use the white space to separate into columns
+seasonONE3 <- str_split_fixed(seasonONE2,pattern = "\\s+", n=length(columnnames3))
+seasonONE3 <- as.data.frame(seasonONE3) # and convert into a dataframe
+colnames(seasonONE3) <- columnnames3 # apply our column names
+seasonONE4 <- sapply(seasonONE3, as.numeric) # convert the fields to numeric
+seasonONE4 <- as.data.frame(seasonONE4)
 
-COElk2016e <- matrix(COElk2016d,ncol = 7)
-COElk2016f <- as.data.frame(COElk2016e)
+# add the season column
+seasonONE4$season <- 1
 
-
-
-
-
-# each element is a page
-## in this case, the tables start on page 5
-COElk2016b <- COElk2016a[-(1:4)]
-head(COElk2016b)
-
-# there is a mix of tables in the pdf.  list what they are (they are in the first row of each)
-tablenames <- as.character(lapply(COElk2016b, `[[`, 1))
-tablenames1 <- as.data.frame(tablenames)
-unique(tablenames1$tablenames)
-
-# for starters, we only want the First thru Fourth Rifle Seasons
-## for example
-# 2016 Elk Harvest, Hunters and Recreation Days for First Rifle Seasons
-rifleseasons1 <- grep("2016 Elk Harvest, Hunters and Recreation Days for First Rifle Seasons", lapply(COElk2016b, `[[`, 1))
-rifleseasons2 <- grep("2016 Elk Harvest, Hunters and Recreation Days for Second Rifle Seasons", lapply(COElk2016b, `[[`, 1))
-rifleseasons3 <- grep("2016 Elk Harvest, Hunters and Recreation Days for Third Rifle Seasons", lapply(COElk2016b, `[[`, 1))
-rifleseasons4 <- grep("2016 Elk Harvest, Hunters and Recreation Days for Fourth Rifle Seasons", lapply(COElk2016b, `[[`, 1))
-rifleseasons <- c(rifleseasons1,rifleseasons2,rifleseasons3,rifleseasons4)
-COElk2016c <- COElk2016b[rifleseasons]
-
-
-library("tabulizer")
-
-rifleseasons <- rifleseasons + 4 #which pages to read
-COElk2016tables <- extract_tables(file="http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/2016StatewideElkHarvest.pdf", output = 'matrix')
-COElk2016tables1 <- COElk2016tables[rifleseasons]
-
-
-
-
-# remove the page headers (not column names)
-# Remove headers on other pages
-header_rows <- grep("2016 Elk", COElk2016c)
-doc[header_rows] <- "page" # I put a marker here that will be useful later
-doc <- doc[- (header_rows - 1)]
-COElk2016b[[1]]
 
 
 
