@@ -96,6 +96,121 @@ seasonONE4 <- as.data.frame(seasonONE4)
 # add the season column
 seasonONE4$season <- 1
 
+######## SEASON TWO ######## 
+# identify season 2 data
+seasonTWOstart <- grep(tableheadings[2], COElk2016d)[1]
+seasonTWOend <- grep(tableheadings[3], COElk2016d)[1]
+seasonTWO <- COElk2016d[((seasonTWOstart+1):(seasonTWOend-1))]
 
+# remove rows with the table headers
+removeheaderrows <- grep("2016 Elk Harvest", seasonTWO)
+seasonTWO <- seasonTWO[-removeheaderrows]
+
+# possible column names 
+columnnames <- grep("([:alpha:])", seasonTWO)
+# numeric data
+seasonTWO1 <- seasonTWO[-columnnames]
+columnnames1 <- seasonTWO[columnnames]
+columnnames1 <- columnnames1[-length(columnnames1)] # we know the last row is a 'Total' summary, not a name
+columnnames2 <- columnnames1[length(columnnames1)]
+columnnames2 <- str_trim(columnnames2) # remove any extra whitespace
+columnnames3 <- unlist(strsplit(columnnames2,split = "\\s+"))
+colremove <- grep("([.])",columnnames3)
+columnnames3 <- columnnames3[-colremove]
+
+# numeric data
+seasonTWO1 <- seasonTWO1[-columnnames]
+seasonTWO1 <- str_trim(seasonTWO1) # remove extra whitespace
+pagenumbers <- grep("\\s+", seasonTWO1) # remove page numbers
+seasonTWO2 <- seasonTWO1[pagenumbers]
+
+# now that it is cleaned up, use the white space to separate into columns
+seasonTWO3 <- str_split_fixed(seasonTWO2,pattern = "\\s+", n=length(columnnames3))
+seasonTWO3 <- as.data.frame(seasonTWO3) # and convert into a dataframe
+colnames(seasonTWO3) <- columnnames3 # apply our column names
+seasonTWO4 <- sapply(seasonTWO3, as.numeric) # convert the fields to numeric
+seasonTWO4 <- as.data.frame(seasonTWO4)
+
+# add the season column
+seasonTWO4$season <- 2
+
+######## SEASON THREE ######## 
+# identify season 2 data
+seasonTHREEstart <- grep(tableheadings[3], COElk2016d)[1]
+seasonTHREEend <- grep(tableheadings[4], COElk2016d)[1]
+seasonTHREE <- COElk2016d[((seasonTHREEstart+1):(seasonTHREEend-1))]
+
+# remove rows with the table headers
+removeheaderrows <- grep("2016 Elk Harvest", seasonTHREE)
+seasonTHREE <- seasonTHREE[-removeheaderrows]
+
+# possible column names 
+columnnames <- grep("([:alpha:])", seasonTHREE)
+# numeric data
+seasonTHREE1 <- seasonTHREE[-columnnames]
+columnnames1 <- seasonTHREE[columnnames]
+columnnames1 <- columnnames1[-length(columnnames1)] # we know the last row is a 'Total' summary, not a name
+columnnames2 <- columnnames1[length(columnnames1)]
+columnnames2 <- str_trim(columnnames2) # remove any extra whitespace
+columnnames3 <- unlist(strsplit(columnnames2,split = "\\s+"))
+colremove <- grep("([.])",columnnames3)
+columnnames3 <- columnnames3[-colremove]
+
+# numeric data
+seasonTHREE1 <- seasonTHREE1[-columnnames]
+seasonTHREE1 <- str_trim(seasonTHREE1) # remove extra whitespace
+pagenumbers <- grep("\\s+", seasonTHREE1) # remove page numbers
+seasonTHREE2 <- seasonTHREE1[pagenumbers]
+
+# now that it is cleaned up, use the white space to separate into columns
+seasonTHREE3 <- str_split_fixed(seasonTHREE2,pattern = "\\s+", n=length(columnnames3))
+seasonTHREE3 <- as.data.frame(seasonTHREE3) # and convert into a dataframe
+colnames(seasonTHREE3) <- columnnames3 # apply our column names
+seasonTHREE4 <- sapply(seasonTHREE3, as.numeric) # convert the fields to numeric
+seasonTHREE4 <- as.data.frame(seasonTHREE4)
+
+# add the season column
+seasonTHREE4$season <- 3
+
+
+######## SEASON FOUR ######## 
+# identify season 2 data
+seasonFOURstart <- grep(tableheadings[4], COElk2016d)[1]
+seasonFOUR <- COElk2016d[((seasonFOURstart+1):(length(COElk2016d)))] # to the end
+
+# remove rows with the table headers
+removeheaderrows <- grep("2016 Elk Harvest", seasonFOUR)
+seasonFOUR <- seasonFOUR[-removeheaderrows]
+
+# possible column names 
+columnnames <- grep("([:alpha:])", seasonFOUR)
+# numeric data
+seasonFOUR1 <- seasonFOUR[-columnnames]
+columnnames1 <- seasonFOUR[columnnames]
+columnnames1 <- columnnames1[-length(columnnames1)] # we know the last row is a 'Total' summary, not a name
+columnnames2 <- columnnames1[length(columnnames1)]
+columnnames2 <- str_trim(columnnames2) # remove any extra whitespace
+columnnames3 <- unlist(strsplit(columnnames2,split = "\\s+"))
+colremove <- grep("([.])",columnnames3)
+columnnames3 <- columnnames3[-colremove]
+
+# numeric data
+seasonFOUR1 <- seasonFOUR1[-columnnames]
+seasonFOUR1 <- str_trim(seasonFOUR1) # remove extra whitespace
+pagenumbers <- grep("\\s+", seasonFOUR1) # remove page numbers
+seasonFOUR2 <- seasonFOUR1[pagenumbers]
+
+# now that it is cleaned up, use the white space to separate into columns
+seasonFOUR3 <- str_split_fixed(seasonFOUR2,pattern = "\\s+", n=length(columnnames3))
+seasonFOUR3 <- as.data.frame(seasonFOUR3) # and convert into a dataframe
+colnames(seasonFOUR3) <- columnnames3 # apply our column names
+seasonFOUR4 <- sapply(seasonFOUR3, as.numeric) # convert the fields to numeric
+seasonFOUR4 <- as.data.frame(seasonFOUR4)
+
+# add the season column
+seasonFOUR4$season <- 4
+
+#Combine
+COElk2016Rifle <- rbind(seasonONE4,seasonTWO4,seasonTHREE4,seasonFOUR4)
 
 
