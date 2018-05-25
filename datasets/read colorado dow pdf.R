@@ -1,7 +1,8 @@
 require(pdftools)
+require(stringr)
 
 
-years <- c(2014,2015,2016,2017)
+years <- c(2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017)
 COElkRifleAll <- NULL
 for (iyear in years) {
   # Identify the hunt statistics we wish to access
@@ -19,8 +20,13 @@ for (iyear in years) {
   # info we want and info we want to ignore
   
   # Lets get started by downloading the pdf from cpw
-  download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",iyear,"StatewideElkHarvest.pdf",sep=""),
-                paste(iyear,"COElkHarvest",sep=""))
+  if (iyear >= 2014) {
+    download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",iyear,"StatewideElkHarvest.pdf",sep=""),
+                  paste(iyear,"COElkHarvest",sep=""))
+  } else {
+    download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",iyear,"ElkHarvestSurvey.pdf",sep=""),
+                  paste(iyear,"COElkHarvest",sep=""))
+  }
   
   # This function will directly export the raw text in a character vector with spaces to show 
   # the white space and \n to show the line breaks.
@@ -29,9 +35,12 @@ for (iyear in years) {
   # Having a full page in one element of a vector is not the most practical. Using strsplit 
   # will help separate lines from each other:
   COElka <- strsplit(COElk, "\n")
-
-  # remove cover page (map, or table of contents)
-  COElka <- COElka[-1]
+  
+  # year 2013 does not have a cover page or table of contents
+  if (iyear >= 2014) {
+    # remove cover page (map, or table of contents)
+    COElka <- COElka[-1]
+  }
   
   # Identify pages with the table headings we identified
   rifle1 <- grep(tableheadings[1], COElka)
