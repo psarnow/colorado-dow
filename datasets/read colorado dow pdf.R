@@ -216,7 +216,7 @@ for (iyear in years) {
   #Combine
   COElkRifle <- rbind(seasonONE3,seasonTWO3,seasonTHREE3,seasonFOUR3)
   COElkRifle$year <- iyear
-  COElkRifleALL <- rbind(COElkRifleAll,COElkRifle)
+  COElkRifleAll <- rbind(COElkRifleAll,COElkRifle)
 
 }
 

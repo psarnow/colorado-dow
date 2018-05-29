@@ -1,0 +1,1300 @@
+lmlist
+redisConnect()#
+# Capture Stats for all images from Rails Console with Forman running#
+#Scan.all.each do |scan| RedisImageStoreWorker.perform_async(scan.id) end#
+#
+# "scan:[scan_id]:image:row_avg" - Sorted Set with score = avg and value = row y#
+# "scan:[scan_id]:image:col_avg" - Sorted set with score = avg and value = col x#
+# "scan:[scan_id]:image:hist" - List with values = pixel count ordered 0-255 (bin)#
+#for histogram (type = list)#
+# redisSelect(2) #select db 2#
+# redisKeys() #list of keys#
+# redisLRange("scan:5770:image:hist",0,255)#
+#for col and rows average (type = zset)#
+redisSelect(2) #select db 2
+require(rredis)#
+#require(numDeriv)#
+require(ggplot2)#
+#require(zoo)#
+require(ggplot2)#
+require(scales)#
+require(RColorBrewer)#
+require(plyr)#
+require(reshape2)#
+require(png)#
+require(grid)#
+require(lubridate)#
+require(RPostgreSQL)
+keys <- unique(redisKeys())#
+totalkeys <- nrow(count(keys))#
+print(totalkeys)
+keys
+i <- "scan:16781:image:col_avg"
+iscol <- substrRight(i, 7)#
+    scan_id <- unique(na.omit(as.numeric(unlist(strsplit(unlist(i), "[^0-9]+")))))
+require(scales)#
+require(RColorBrewer)#
+require(plyr)#
+require(reshape2)#
+require(png)#
+require(grid)#
+require(lubridate)
+iscol <- substrRight(i, 7)#
+    scan_id <- unique(na.omit(as.numeric(unlist(strsplit(unlist(i), "[^0-9]+")))))
+library(plyr)
+iscol <- substrRight(i, 7)#
+    scan_id <- unique(na.omit(as.numeric(unlist(strsplit(unlist(i), "[^0-9]+")))))
+q()
+require(rredis)#
+require(ggplot2)#
+require(scales)#
+require(RColorBrewer)#
+require(plyr)#
+require(reshape2)#
+require(png)#
+require(grid)#
+require(lubridate)#
+require(RPostgreSQL)#
+#
+substrRight <- function(x, n){ #
+ substr(x, nchar(x)-n+1, nchar(x))#
+ }#
+#
+redisConnect()#
+redisSelect(2) #
+#
+##################################################
+# FOR A SINGLE SCAN_ID#
+nbx <- redisZRange("scan:23150:image:row_avg",withscores = TRUE)#
+dfnbx <- as.data.frame(matrix(unlist(nbx),ncol=2))#
+#
+i <- sapply(dfnbx, is.factor)#
+dfnbx[i] <- lapply(dfnbx[i], as.character)#
+#
+colnames(dfnbx) <- c("x", "value")#
+#
+dfnbx$x <- as.numeric(dfnbx$x)#
+dfnbx$value <- as.numeric(dfnbx$value)#
+#
+index <- with(dfnbx, order(x,decreasing=F))#
+dfnbx <- dfnbx[index, ]#
+#
+imagestats <- NULL#
+#might be cool to include # of dark columns - columns with avg < 15#
+imagestats$dark <- nrow(subset(dfnbx, value < 15))#
+imagestats$maxcol <- max(dfnbx$value)#
+simplelm <- lm(formula = value ~ x, data = dfnbx)#
+imagestats$lmi <- summary(simplelm)$coefficients[1]#
+imagestats$lms <- summary(simplelm)$coefficients[2]#
+#
+#apply smoother#
+my_loess <- loess(value~x, data=dfnbx, span = 0.20)#
+curve <- as.data.frame(my_loess$fitted)#
+#curve$x <- rep(min(dfnbx$x):max(dfnbx$x))#
+#
+colnames(curve) <- c("smooth")#
+curve$x <- rep(1:nrow(curve))#
+#
+first_diff <- NULL#
+first_diff$max <- (which(diff(sign(diff(curve$smooth)))==-2)+1)#
+#
+imagestats2 <- curve[curve$x %in% first_diff$max, ]#
+imagestats2$x <- imagestats2$x + min(dfnbx$x)#
+#
+toptwo <- with(imagestats2, order(smooth,decreasing=TRUE)[1:2])#
+toptwo <- imagestats2[toptwo, ]#
+imagestats$max <- toptwo#
+#
+ggplot(dfnbx, aes(x, value)) + #
+geom_line() +#
+geom_point() +#
+#annotate("text", x = c(250), y = c(50), label = paste("lm slope",summary(simplelm)$coefficients[2], sep=" "), size=15, colour="#352c65", family="Helvetica Neue", hjust=0) +#
+#geom_smooth(aes(group=1),method = "lm") #
+geom_smooth(aes(group=1), se=FALSE, method="loess", span=0.20, alpha = .1, size=2) #
+#geom_line(aes(ddfnbx$x, ddfnbx$dx))#
+#################################################
+# FOR ALL SCAN IDS#
+require(lubridate)#
+require(rredis)#
+library("parallel")#
+library("doParallel")#
+library("foreach")#
+#
+cl <- makeCluster(detectCores() - 2)#
+clusterEvalQ(cl, { require(rredis); redisConnect(); redisSelect(2) })#
+registerDoParallel(cl)#
+#
+alllist <- NULL#
+collist   <- NULL#
+imagestatscol <- NULL#
+rowlist   <- NULL#
+imagestatsrow <- NULL#
+# Get list of Keys#
+redisConnect()#
+redisSelect(2) #
+keys <- unique(redisKeys())#
+totalkeys <- nrow(count(keys))#
+print(totalkeys)#
+j <- 0#
+#
+start <- now()#
+alllist <- foreach(i=1:totalkeys, .packages = c("rredis","ggplot2","scales","plyr","reshape2","foreach"), .combine=rbind, .multicombine=TRUE, .inorder=FALSE) %dopar% {#
+   try({#
+    substrRight <- function(x, n){ #
+    substr(x, nchar(x)-n+1, nchar(x))#
+    }#
+    k <- keys[i]#
+    print(k)#
+    j <- j + 1#
+    print(j)    #
+    #get the last 7 characters from key#
+    roworcol <- substrRight(k, 7)    #
+    scan_id <- unique(na.omit(as.numeric(unlist(strsplit(unlist(k), "[^0-9]+")))))#
+    if (roworcol == "col_avg") {#
+        imagestatscol$scan_id <- scan_id#
+        nbx <- redisZRange(k,withscores = TRUE)#
+        dfnbx <- as.data.frame(matrix(unlist(nbx),ncol=2))#
+        kk <- sapply(dfnbx, is.factor)#
+        dfnbx[kk] <- lapply(dfnbx[kk], as.character)#
+        colnames(dfnbx) <- c("x", "value")#
+        dfnbx$x <- as.numeric(dfnbx$x)#
+        dfnbx$value <- as.numeric(dfnbx$value)#
+        index <- with(dfnbx, order(x,decreasing=F))#
+        dfnbx <- dfnbx[index, ]#
+        imagestatscol$dark <- nrow(subset(dfnbx, value < 15))#
+        imagestatscol$maxcol <- max(dfnbx$value)#
+        simplelm <- lm(formula = value ~ x, data = dfnbx)#
+        imagestatscol$lmi <- summary(simplelm)$coefficients[1]#
+        imagestatscol$lms <- summary(simplelm)$coefficients[2]#
+        my_loess <- loess(value~x, data=dfnbx, span = 0.20)#
+        curve <- as.data.frame(my_loess$fitted)#
+        colnames(curve) <- c("smooth")#
+        curve$x <- rep(1:nrow(curve))#
+        first_diff <- NULL#
+        first_diff$max <- (which(diff(sign(diff(curve$smooth)))==-2)+1)#
+        imagestatscol2 <- curve[curve$x %in% first_diff$max, ]#
+        imagestatscol2$x <- imagestatscol2$x + min(dfnbx$x)#
+        toptwo <- with(imagestatscol2, order(smooth,decreasing=TRUE)[1:2])#
+        toptwo <- imagestatscol2[toptwo, ]#
+        imagestatscol$max <- toptwo#
+        imagestatscol$type <- "col"#
+        imagestatscol#
+        }#
+        else if (roworcol == "row_avg") {#
+        imagestatsrow$scan_id <- scan_id#
+        nbx <- redisZRange(k,withscores = TRUE)#
+        dfnbx <- as.data.frame(matrix(unlist(nbx),ncol=2))#
+        kk <- sapply(dfnbx, is.factor)#
+        dfnbx[kk] <- lapply(dfnbx[kk], as.character)#
+        colnames(dfnbx) <- c("y", "value")#
+        dfnbx$y <- as.numeric(dfnbx$y)#
+        dfnbx$value <- as.numeric(dfnbx$value)#
+        index <- with(dfnbx, order(y,decreasing=F))#
+        dfnbx <- dfnbx[index, ]#
+        imagestatsrow$dark <- nrow(subset(dfnbx, value < 15))#
+        imagestatsrow$maxrow <- max(dfnbx$value)#
+        simplelm <- lm(formula = value ~ y, data = dfnbx)#
+        imagestatsrow$rowlmi <- summary(simplelm)$coefficients[1]#
+        imagestatsrow$rowlms <- summary(simplelm)$coefficients[2]#
+        my_loess <- loess(value~y, data=dfnbx, span = 0.20)#
+        curve <- as.data.frame(my_loess$fitted)#
+        colnames(curve) <- c("smooth")#
+        curve$y <- rep(1:nrow(curve))#
+        first_diff <- NULL#
+        first_diff$max <- (which(diff(sign(diff(curve$smooth)))==-2)+1)#
+        imagestatsrow2 <- curve[curve$y %in% first_diff$max, ]#
+        imagestatsrow2$y <- imagestatsrow2$y + min(dfnbx$y)#
+        toptwo <- with(imagestatsrow2, order(smooth,decreasing=TRUE)[1:2])#
+        toptwo <- imagestatsrow2[toptwo, ]#
+        imagestatsrow$rowmax <- toptwo#
+        imagestatsrow$type <- "row"#
+        imagestatsrow#
+        }#
+    else {}#
+      })#
+  }#
+finish <- now()#
+print("Total Time")#
+print(finish - start)#
+stopCluster(cl)
+q()\
+q()
+require(rredis)#
+require(ggplot2)#
+require(scales)#
+require(RColorBrewer)#
+require(plyr)#
+require(reshape2)#
+require(png)#
+require(grid)#
+require(lubridate)#
+require(RPostgreSQL)#
+#
+substrRight <- function(x, n){ #
+ substr(x, nchar(x)-n+1, nchar(x))#
+ }#
+#
+redisConnect()#
+redisSelect(2) #
+#
+##################################################
+# FOR A SINGLE SCAN_ID#
+nbx <- redisZRange("scan:23150:image:row_avg",withscores = TRUE)#
+dfnbx <- as.data.frame(matrix(unlist(nbx),ncol=2))#
+#
+i <- sapply(dfnbx, is.factor)#
+dfnbx[i] <- lapply(dfnbx[i], as.character)#
+#
+colnames(dfnbx) <- c("x", "value")#
+#
+dfnbx$x <- as.numeric(dfnbx$x)#
+dfnbx$value <- as.numeric(dfnbx$value)#
+#
+index <- with(dfnbx, order(x,decreasing=F))#
+dfnbx <- dfnbx[index, ]#
+#
+imagestats <- NULL#
+#might be cool to include # of dark columns - columns with avg < 15#
+imagestats$dark <- nrow(subset(dfnbx, value < 15))#
+imagestats$maxcol <- max(dfnbx$value)#
+simplelm <- lm(formula = value ~ x, data = dfnbx)#
+imagestats$lmi <- summary(simplelm)$coefficients[1]#
+imagestats$lms <- summary(simplelm)$coefficients[2]#
+#
+#apply smoother#
+my_loess <- loess(value~x, data=dfnbx, span = 0.20)#
+curve <- as.data.frame(my_loess$fitted)#
+#curve$x <- rep(min(dfnbx$x):max(dfnbx$x))#
+#
+colnames(curve) <- c("smooth")#
+curve$x <- rep(1:nrow(curve))#
+#
+first_diff <- NULL#
+first_diff$max <- (which(diff(sign(diff(curve$smooth)))==-2)+1)#
+#
+imagestats2 <- curve[curve$x %in% first_diff$max, ]#
+imagestats2$x <- imagestats2$x + min(dfnbx$x)#
+#
+toptwo <- with(imagestats2, order(smooth,decreasing=TRUE)[1:2])#
+toptwo <- imagestats2[toptwo, ]#
+imagestats$max <- toptwo#
+#
+ggplot(dfnbx, aes(x, value)) + #
+geom_line() +#
+geom_point() +#
+#annotate("text", x = c(250), y = c(50), label = paste("lm slope",summary(simplelm)$coefficients[2], sep=" "), size=15, colour="#352c65", family="Helvetica Neue", hjust=0) +#
+#geom_smooth(aes(group=1),method = "lm") #
+geom_smooth(aes(group=1), se=FALSE, method="loess", span=0.20, alpha = .1, size=2) #
+#geom_line(aes(ddfnbx$x, ddfnbx$dx))#
+#################################################
+# FOR ALL SCAN IDS#
+require(lubridate)#
+require(rredis)#
+library("parallel")#
+library("doParallel")#
+library("foreach")#
+#
+cl <- makeCluster(detectCores() - 2)#
+clusterEvalQ(cl, { require(rredis); redisConnect(); redisSelect(2) })#
+registerDoParallel(cl)#
+#
+alllist <- NULL#
+collist   <- NULL#
+imagestatscol <- NULL#
+rowlist   <- NULL#
+imagestatsrow <- NULL#
+# Get list of Keys#
+redisConnect()#
+redisSelect(2) #
+keys <- unique(redisKeys())#
+totalkeys <- nrow(count(keys))#
+print(totalkeys)#
+j <- 0#
+#
+start <- now()#
+alllist <- foreach(i=1:totalkeys, .packages = c("rredis","ggplot2","scales","plyr","reshape2","foreach"), .combine=rbind, .multicombine=TRUE, .inorder=FALSE) %dopar% {#
+   try({#
+    substrRight <- function(x, n){ #
+    substr(x, nchar(x)-n+1, nchar(x))#
+    }#
+    k <- keys[i]#
+    print(k)#
+    j <- j + 1#
+    print(j)    #
+    #get the last 7 characters from key#
+    roworcol <- substrRight(k, 7)    #
+    scan_id <- unique(na.omit(as.numeric(unlist(strsplit(unlist(k), "[^0-9]+")))))#
+    if (roworcol == "col_avg") {#
+        imagestatscol$scan_id <- scan_id#
+        nbx <- redisZRange(k,withscores = TRUE)#
+        dfnbx <- as.data.frame(matrix(unlist(nbx),ncol=2))#
+        kk <- sapply(dfnbx, is.factor)#
+        dfnbx[kk] <- lapply(dfnbx[kk], as.character)#
+        colnames(dfnbx) <- c("x", "value")#
+        dfnbx$x <- as.numeric(dfnbx$x)#
+        dfnbx$value <- as.numeric(dfnbx$value)#
+        index <- with(dfnbx, order(x,decreasing=F))#
+        dfnbx <- dfnbx[index, ]#
+        imagestatscol$dark <- nrow(subset(dfnbx, value < 15))#
+        imagestatscol$maxcol <- max(dfnbx$value)#
+        simplelm <- lm(formula = value ~ x, data = dfnbx)#
+        imagestatscol$lmi <- summary(simplelm)$coefficients[1]#
+        imagestatscol$lms <- summary(simplelm)$coefficients[2]#
+        my_loess <- loess(value~x, data=dfnbx, span = 0.20)#
+        curve <- as.data.frame(my_loess$fitted)#
+        colnames(curve) <- c("smooth")#
+        curve$x <- rep(1:nrow(curve))#
+        first_diff <- NULL#
+        first_diff$max <- (which(diff(sign(diff(curve$smooth)))==-2)+1)#
+        imagestatscol2 <- curve[curve$x %in% first_diff$max, ]#
+        imagestatscol2$x <- imagestatscol2$x + min(dfnbx$x)#
+        toptwo <- with(imagestatscol2, order(smooth,decreasing=TRUE)[1:2])#
+        toptwo <- imagestatscol2[toptwo, ]#
+        imagestatscol$max <- toptwo#
+        imagestatscol$type <- "col"#
+        imagestatscol#
+        }#
+        else if (roworcol == "row_avg") {#
+        imagestatsrow$scan_id <- scan_id#
+        nbx <- redisZRange(k,withscores = TRUE)#
+        dfnbx <- as.data.frame(matrix(unlist(nbx),ncol=2))#
+        kk <- sapply(dfnbx, is.factor)#
+        dfnbx[kk] <- lapply(dfnbx[kk], as.character)#
+        colnames(dfnbx) <- c("y", "value")#
+        dfnbx$y <- as.numeric(dfnbx$y)#
+        dfnbx$value <- as.numeric(dfnbx$value)#
+        index <- with(dfnbx, order(y,decreasing=F))#
+        dfnbx <- dfnbx[index, ]#
+        imagestatsrow$dark <- nrow(subset(dfnbx, value < 15))#
+        imagestatsrow$maxrow <- max(dfnbx$value)#
+        simplelm <- lm(formula = value ~ y, data = dfnbx)#
+        imagestatsrow$rowlmi <- summary(simplelm)$coefficients[1]#
+        imagestatsrow$rowlms <- summary(simplelm)$coefficients[2]#
+        my_loess <- loess(value~y, data=dfnbx, span = 0.20)#
+        curve <- as.data.frame(my_loess$fitted)#
+        colnames(curve) <- c("smooth")#
+        curve$y <- rep(1:nrow(curve))#
+        first_diff <- NULL#
+        first_diff$max <- (which(diff(sign(diff(curve$smooth)))==-2)+1)#
+        imagestatsrow2 <- curve[curve$y %in% first_diff$max, ]#
+        imagestatsrow2$y <- imagestatsrow2$y + min(dfnbx$y)#
+        toptwo <- with(imagestatsrow2, order(smooth,decreasing=TRUE)[1:2])#
+        toptwo <- imagestatsrow2[toptwo, ]#
+        imagestatsrow$rowmax <- toptwo#
+        imagestatsrow$type <- "row"#
+        imagestatsrow#
+        }#
+    else {}#
+      })#
+  }#
+finish <- now()#
+print("Total Time")#
+print(finish - start)#
+stopCluster(cl)
+q()
+require(RPostgreSQL)
+postgresqlBuildTableDefinition(PostgreSQL, labnotebook, labnotebook, row.names = TRUE)
+q()
+require(rredis)#
+require(ggplot2)#
+require(scales)#
+require(RColorBrewer)#
+require(plyr)#
+require(reshape2)#
+require(png)#
+require(grid)#
+require(lubridate)#
+require(RPostgreSQL)#
+require(lubridate)#
+require(rredis)#
+require(WriteXLS)#
+library("parallel")#
+library("doParallel")#
+library("foreach")#
+#
+#GET LATEST LABNOTEBOOK#
+drv <- dbDriver("PostgreSQL")#
+con <- dbConnect(drv, dbname="labnotebook")#
+select = "select *FROM labnotebook2"#
+rs <- dbSendQuery(con, select)#
+labnotebook <- fetch(rs,n=-1) #
+labnotebook <- labnotebook[,-1]#
+labnotebookbackup <- labnotebook
+setwd("/Users/psarnow/Documents/")#
+dff2 <- labnotebook#
+#dff2 <- subset(dff2, team == "Dallas Mavericks")#
+# shorten names for graphs#
+dff2$muscle[dff2$muscle=="Gastrocnemius/Soleus"] <- "GS"#
+dff2$muscle[dff2$muscle=="Rectus Femoris"] <- "RF"#
+dff2$muscle[dff2$muscle=="Vastus Lateralis"] <- "VL"#
+dff2$muscle[dff2$muscle=="Vastus Medialis"] <- "VM"#
+dff2$muscle[dff2$muscle=="Forearm Flexors"] <- "FF"#
+dff2$muscle[dff2$muscle=="Hamstring Medial"] <- "HM"#
+dff2$muscle[dff2$muscle=="Infraspinatus"] <- "I"#
+dff2$muscle[dff2$muscle=="Latissimus Dorsi"] <- "LD"#
+dff2$muscle[dff2$muscle=="Posterior Hip"] <- "PH"#
+dff2$muscle[(dff2$muscle=="Posterior Deltoid")] <- "PD"#
+dff2$muscle[(dff2$muscle=="Gastrocnemius Medial")] <- "GM"#
+dff2$muscle[(dff2$muscle=="Gastrocnemius Lateral")] <- "GL"#
+dff2$muscle[(dff2$muscle=="Hamstring Lateral")] <- "HL"#
+#
+#fix App State VL scans#
+apu <- subset(dff2, team == "Appalachian State University")#
+dff3 <- subset(dff2, team != "Appalachian State University")#
+dfVL <- subset(apu, muscle == "VL")#
+dfother <- subset(apu, muscle != "VL")#
+#
+usession <- unique(dfVL$session)#
+VL <- NULL#
+for (i in usession) {#
+    x <- subset(dfVL, session == i)#
+    index <- with(x, order(sequence_number,decreasing=F))#
+    x <- x[index, ]#
+    #one session had a 5 to 3 distr.#
+    if (i == 4878) {#
+        x$muscle[1:5] <- "VLsite1"#
+        x$muscle[6:8] <- "VLsite2"#
+    }#
+    else if (i == 4897) {#
+        x$muscle[1:3] <- "VLsite1"#
+        x$muscle[4:7] <- "VLsite2"#
+    }#
+    else {#
+        xcount <- nrow(x)#
+        x$muscle[1:(xcount/2)] <- "VLsite1"#
+        x$muscle[((xcount/2)+1):xcount] <- "VLsite2"#
+        VL <- rbind(VL, x)#
+    }#
+}#
+#
+#custom fix a few sessions#
+VL$muscle[VL$session==4904] <- "VLsite2"#
+VL$muscle[VL$session==4870] <- "VLsite1"#
+VL$muscle[VL$session==4899] <- "VLsite1"#
+VL <- subset(VL, (session!=4898 | muscle!="VLsite1"))#
+VL$session[VL$session==4899] <- as.numeric(4898)#
+#
+#Site B is what the biopsys are measuring#
+VLb <- subset(VL, timing == "Pre" & muscle == "VLsite1")#
+VLb$muscle <- "VLsiteB"#
+#
+VLbb <- subset(VL, timing == "Recovery" & muscle == "VLsite2")#
+VLbb$muscle <- "VLsiteB"#
+#
+dfoverall <- rbind(VL,dfother,VLb,VLbb)#
+#dfoverall$muscle_side <- paste(dfoverall$muscle, dfoverall$side)#
+dff4 <- rbind(dfoverall,dff3)#
+#
+dff4$date <- as.numeric(dff4$date)#
+#
+#average time and score for each muscle session#
+x <- ddply(dff4, .(muscle, side, device, athlete, session, timing, team, notes), summarise,#
+date = mean(date),#
+score = round(mean(score),digits=0))#
+#
+x$date <- as.POSIXct(x$date, origin = '1970-01-01', tz="UTC+12")#
+#
+x$muscle_side <- paste(x$muscle, x$side)#
+#
+#determine target and range for each athlete's muscle_side#
+z <- ddply(x, .(athlete, muscle_side, muscle), summarise,#
+  sessions = boxplot.stats(score)$n,#
+  itarget = round(boxplot.stats(score)$stats[4],digits=0),#
+  dtarget = round(mean(score),digits=0)+2,#
+  range = round(max(boxplot.stats(score)$stats) - min(boxplot.stats(score)$stats), digits = 2))#
+#
+#check for sufficient number of sessions and range size...default targets#
+z$target[(z$sessions < 5 | z$range < 9)] <- z$dtarget[(z$sessions < 5 | z$range < 9)]#
+z$target[(is.na(z$target))] <- z$itarget[(is.na(z$target))]#
+#
+uu <- subset(z, select= c(athlete, muscle_side,target,range))#
+#
+xx <- merge(x,uu,by=c("athlete","muscle_side"))#
+xx$target <- as.numeric(xx$target)#
+#
+#determine how far scores are from targets#
+xx$dft <- round((xx$score - xx$target), digits=2)#
+#determine score as percent of range#
+xx$fueltank <- round(((xx$range + xx$dft) / xx$range), digits=2)#
+#xx$fueltank <- sprintf("%1.2f%%", 100*round(((xx$range + xx$dft) / xx$range), digits=2))#
+#
+#adjust for ranges less than 2, make scores 75% erso#
+xx$fueltank[(xx$range < 2) & (xx$fueltank < 0)] <- .5#
+xx$fueltank[(xx$range < 2) & (xx$fueltank > 0)] <- .75#
+#
+#put bounds on bottom and top (lowest is 10%, highest is 120%)#
+xx$fueltank[(xx$fueltank < .1)] <- .1#
+xx$fueltank[(xx$fueltank > 1.2)] <- 1.2#
+#
+coredata <- xx#
+#determine score drop if its a recovery following a pre on same day
+require(EBImage)#
+require(rredis)#
+require(ggplot2)#
+require(scales)#
+require(RColorBrewer)#
+require(plyr)#
+require(reshape2)#
+require(png)#
+require(grid)#
+require(lubridate)#
+require(RPostgreSQL)#
+require(lubridate)#
+require(rredis)#
+require(WriteXLS)#
+library("parallel")#
+library("doParallel")#
+library("foreach")#
+#
+Rscoring <- subset(labnotebook, device != "LOGIQe" #
+                   & session > 3177#
+                   & team == "GU Athletes & Staff"#
+                   & muscle == "Rectus Femoris")#
+#
+Rscoring$ymax <- pmax(Rscoring$y1,Rscoring$y2)#
+Rscoring$msize <- abs(Rscoring$ymax-Rscoring$crop_y)#
+ggplot(Rscoring, aes(muscle, msize)) +#
+  geom_violin() +#
+  geom_boxplot(alpha=.25) #
+cl <- makeCluster(detectCores() - 2)#
+registerDoParallel(cl)#
+#
+allscores <- NULL#
+imagestats <- NULL#
+# Get list of Images#
+full_list <- unique(Rscoring$imagepath)#
+totalimages <- nrow(count(full_list))#
+print(totalimages)#
+start <- now()#
+allscores <- foreach(i=1:totalimages, .packages = c("IM","EBImage","scales","plyr","reshape2","foreach"), .combine=rbind, .multicombine=TRUE, .inorder=FALSE) %dopar% {#
+  k <- full_list[i]#
+  img <- subset(Rscoring, imagepath == k)#
+  imagestats$scan_id <- img$scan_id  #
+  img2 <- readImage(img$imagepath)[,,mean(1:3)]#
+  #blur#
+  x <- gblur(y, 15)#
+  writeImage(x,"gblurimage.jpg")#
+  #threshold#
+  xt <- thresh(x, 60, 60, 0.003)#
+  writeImage(xt,"thresholdimage.jpg")#
+  ## morphological opening to remove objects smaller than the structuring element#
+  xm <- opening(xt, makeBrush(11, shape='disc'))#
+  writeImage(xm,"morphedimage.jpg")#
+  #inverse foreground/background#
+  xm <- 1 - xm#
+  writeImage(xm,"inversebackgroundimage.jpg")#
+  xm <- bwlabel(xm)#
+  ## compute shape features#
+  fts <- computeFeatures.shape(xm)#
+  #find all but the largest shape#
+  idx <- which(fts[,"s.area"] < max(fts[,"s.area"]))#
+  #remove these areas from image#
+  nseg <- rmObjects(xm,idx)#
+  writeImage(nseg,"largestareaimage.jpg") #
+  #select the pixels that have a 0's value and make them really high so we don't score them#
+  nseg[nseg == 0] <- 100#
+  imgroi <- y*nseg#
+  #Crop Image top#
+  maxc <- ncol(img2)#
+  maxr <- nrow(img2)#
+  imgc <- imgroi[(img$crop_y-img$chrome_y):maxr,1:maxc]#
+  #imguc <- img2[(img$crop_y-img$chrome_y):maxr,1:maxc,1:3]#
+  #Get pixel intensities#
+#   rows <- nrow(imgc)#
+#   cols <- ncol(imgc)#
+#   rowsuc <- nrow(imguc)#
+  #colsuc <- ncol(imguc)#
+  #mean of r,g,b intensities#
+  #opencv is binning the intensities, don't think i have to do that#
+  #pixelmean <- imgc[1:rows,1:cols,mean(1:3)]#
+  #pixelmeanuc <- imguc[1:rowsuc,1:colsuc,mean(1:3)]#
+  #rescale (may not be necessary really)#
+  pixelmeanrs <- rescale(imgc, c(0,255))#
+  #pixelmeanrsuc <- rescale(pixelmeanuc, c(0,255))#
+  thresh75 <- pixelmeanrs[ which(pixelmeanrs < 75)]#
+  #thresh75uc <- pixelmeanrsuc[ which(pixelmeanrsuc < 75)]#
+  imagestats$scorebc <- 75 - mean(thresh75)#
+  #imagestats$scoreuc <- 75 - mean(thresh75uc)#
+  imagestats$score <- img$score#
+}#
+finish <- now()#
+print("Total Time")#
+print(finish - start)#
+stopCluster(cl)#
+scoring <- allscores#
+scoring <- as.data.frame(matrix(unlist(scoring),ncol=3))#
+colnames(scoring) <- c("scan_id", "scorebc", "score")#
+scoring$cropscorediff <- scoring$scoreuc - scoring$scorebc#
+bcscoring <- merge(Rscoring, scoring, by=c("scan_id"))#
+bcscoring$ath_muscle_side <- paste(bcscoring$athlete, bcscoring$muscle, bcscoring$side)
+q()
+require(e1071)
+model <- svm(Species ~ ., data = iris_train,#
+ method = "C-classification", kernel = "radial",#
+ cost = 10, gamma = 0.1)
+data(iris)
+model <- svm(Species ~ ., data = iris_train,#
+ method = "C-classification", kernel = "radial",#
+ cost = 10, gamma = 0.1)
+model <- svm(Species ~ ., data = iris,#
+ method = "C-classification", kernel = "radial",#
+ cost = 10, gamma = 0.1)
+summary(model)
+pred <- predict(model, head(iris), decision.values = TRUE)
+pred
+tobj <- tune.svm(type ~ ., data = spam_train[1:300, ], gamma = 10^(-6:-3), cost = 10^(1:2))
+tobj <- tune.svm(type ~ ., data = iris[1:300, ], gamma = 10^(-6:-3), cost = 10^(1:2))
+tobj <- tune.svm(Species ~ ., data = iris[1:300, ], gamma = 10^(-6:-3), cost = 10^(1:2))
+summary(tobj)
+q()
+require(rredis)#
+require(ggplot2)#
+require(scales)#
+require(RColorBrewer)#
+require(plyr)#
+require(reshape2)#
+require(png)#
+require(grid)#
+require(lubridate)#
+require(RPostgreSQL)#
+require(WriteXLS)#
+library("parallel")#
+library("doParallel")#
+library("foreach")
+dff1 <- readWorksheet(loadWorkbook("/Users/psarnow/Documents/Nieman-MuscleSound-Study-Data-Spring-2014"),sheet=1)
+require(XLConnect)
+dff1 <- readWorksheet(loadWorkbook("/Users/psarnow/Documents/Nieman-MuscleSound-Study-Data-Spring-2014"),sheet=1)
+dff1 <- readWorksheet(loadWorkbook("/Users/psarnow/Documents/Nieman-MuscleSound-Study-Data-Spring-2014.xlsx"),sheet=1)
+dff1
+dff1 <- select(dff1, Subject, (Age:Fat.)
+)
+require(dplyr
+)
+dff1 <- select(dff1, Subject, (Age:Fat.))
+dff1
+colnames(dff1) <- c("athlete","age","height","weight","fat")
+dff1
+BiopsyModel <- read.csv(file = "/Users/psarnow/Documents/scoringmodel.csv")
+BiopsyModel$athelte
+BiopsyModel$athelete
+BiopsyModel$athlete
+dff1$athlete <- paste("AS",dff1$athlete,sep="")
+dff1
+dff1 <- readWorksheet(loadWorkbook("/Users/psarnow/Documents/Nieman-MuscleSound-Study-Data-Spring-2014.xlsx"),sheet=1)#
+dff1 <- select(dff1, Subject, (Age:Fat.)#
+colnames(dff1) <- c("athlete","age","height","weight","fat")#
+dff1 <- subset(dff1, athlete == "NA")
+dff1 <- readWorksheet(loadWorkbook("/Users/psarnow/Documents/Nieman-MuscleSound-Study-Data-Spring-2014.xlsx"),sheet=1)#
+dff1 <- select(dff1, Subject, (Age:Fat.)
+dff1
+dff1 <- dplyr:::select(dff1, Subject, (Age:Fat.)
+)
+colnames(dff1) <- c("athlete","age","height","weight","fat")
+dff1
+dff1 <- subset(dff1, athlete != "NA")
+dff1
+dff1$athlete <- paste("AS",dff1$athlete,sep="")
+dff1
+dff2 <- readWorksheet(loadWorkbook("/Users/psarnow/Documents//CUStudy/MuscleSound Study Table Subject Charactersistics FINAL.xlsx"),sheet=1)
+dff2
+dff2 <- select(dff2, Study.Code, Age, Weight..lb..1, Height..in..1, X..Body.Fat)
+dff2
+colnames(dff2) <- c("athlete","age","weight","height","fat")
+dff2
+dff2$athlete <- gsub("^.*?: ","",dff2$athlete)
+dff2
+dff2$athlete <- gsub("^.*?: """,dff2$athlete)
+dff2$athlete <- gsub("^.*?: ",dff2$athlete)
+dff2$athlete <- gsub("^.*?: " "",dff2$athlete)
+dff2$athlete <- gsub("^.*?","",dff2$athlete)
+dff2
+dff2$athlete <- gsub("^.*?",",",dff2$athlete)
+dff2
+dff2$athlete <- as.numeric(gsub("\\D", "", dff2$athlete))
+dff2
+dff2$athlete <- paste("CU",dff2$athlete,sep="")
+dff2
+athleteinfo <- rbind(dff1,dff2)
+athleteinfo
+dff2$fat <- dff2$fat * 100
+dff2
+athleteinfo <- rbind(dff1,dff2)
+athleteinfo
+athleteinfo$BMI = (athleteinfo$weight / (athleteinfo$height * athleteinfo$height)) * 703
+athleteinfo
+BiopsyModel <- read.csv(file = "/Users/psarnow/Documents/scoringmodel.csv")#
+#
+BiopsyModel <- merge(BiopsyModel,athleteinfo, by=c("athlete"))
+BiopsyModel
+class(BiopsyModel$age)
+class(BiopsyModel$height)
+class(BiopsyModel$fat)
+class(BiopsyModel$BMI)
+write.csv(BiopsyModel, "scoringmodel.csv", row.names=TRUE)
+write.csv(BiopsyModel, "/Users/psarnow/Documents/scoringmodel.csv", row.names=TRUE)
+q()
+require(rredis)#
+require(ggplot2)#
+require(scales)#
+require(RColorBrewer)#
+require(plyr)#
+require(reshape2)#
+require(png)#
+require(grid)#
+require(lubridate)#
+require(RPostgreSQL)#
+require(WriteXLS)#
+library("parallel")#
+library("doParallel")#
+library("foreach")#
+#
+# grab the db first so we are only doing calcs on images that are scored in a session (not pending)#
+# replace redis calcs with EBImage (get row and col plot profiles)#
+# add colorbar stats?#
+# make sure moment calcs are correct#
+#
+#GET LATEST LABNOTEBOOK#
+drv <- dbDriver("PostgreSQL")#
+con <- dbConnect(drv, dbname="labnotebook")#
+select = "select *FROM labnotebook"#
+rs <- dbSendQuery(con, select)#
+labnotebook <- fetch(rs,n=-1) #
+labnotebook <- labnotebook[,-1]
+kb <- subset(labnotebook, athlete == "Kiki Broe" & session < 4160)#
+#average time and score for each muscle session#
+kb <- ddply(kb, .(muscle, side, device, athlete, session, timing, team, notes), plyr:::summarise,#
+date = mean(date),#
+score = round_any(mean(score),5))
+kb
+kb <- subset(labnotebook, athlete == "Kiki Broe" & session < 4160)#
+#average time and score for each muscle session#
+kb <- ddply(kb, .(muscle, side, athlete, session, timing, team, notes), plyr:::summarise,#
+date = mean(date),#
+score = round_any(mean(score),5))
+kb
+NCPalette <- c("#643165", "#8FC44E", "#F29632", "#BE8CBE", "#BAD892", "#EDAE68", "#BE8CBE", "#342D6C", "#BE8C44", "#BAD892")
+ggplot(kb, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=2) +#
+    geom_smooth(aes(date, score), method="loess", span=.5, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))
+kbrf <- subset(kb, muscle == "Rectus Femoris")#
+ my_loess <- loess(score~date, data=kbrf, span = 0.20)#
+      curve <- as.data.frame(my_loess$fitted)
+my_loess <- loess(score~date, data=kbrf, span = 0.20)
+my_loess <- loess(score~date, data=kbrf, span = 1)
+kb <- subset(labnotebook, athlete == "Kiki Broe")#
+# & session < 4160#
+NCPalette <- c("#643165", "#8FC44E", "#F29632", "#BE8CBE", "#BAD892", "#EDAE68", "#BE8CBE", "#342D6C", "#BE8C44", "#BAD892")#
+#average time and score for each muscle session#
+kb <- ddply(kb, .(muscle, side, athlete, session, timing, team, notes), plyr:::summarise,#
+date = mean(date),#
+score = round_any(mean(score),5))#
+ggplot(kb, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=2) +#
+    geom_smooth(aes(date, score), method="loess", span=.5, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf <- subset(kb, muscle == "Rectus Femoris")#
+ my_loess <- loess(score~date, data=kbrf, span = 0.20)#
+      curve <- as.data.frame(my_loess$fitted)
+kbrf$date <- as.numeric(kbrf$date)#
+ my_loess <- loess(score~date, data=kbrf, span = 0.20)#
+      curve <- as.data.frame(my_loess$fitted)
+curve
+my_loess
+my_loess <- loess(score~date, data=kbrf, span = 0.20)#
+curve <- as.data.frame(my_loess$fitted)
+my_loess <- loess(score~date, data=kbrf, span = 0.20)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+my_loess <- loess(score~date, data=kbrf, span = 1)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+my_loess <- loess(score~date, data=kbrf, span = 0.5)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+my_loess <- loess(score~date, data=kbrf, span = 1)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+ggplot(kb, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=2) +#
+    geom_smooth(aes(date, score), method="loess", span=1, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))
+?loess()
+my_loess <- loess(score~date, data=kbrf, span = 2)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+my_loess <- loess(score~date, data=kbrf, span = 1)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+my_loess <- loess(score~date, data=kbrf, span = .5)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+my_loess <- loess(score~date, data=kbrf, span = .35)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+my_loess <- loess(score~date, data=kbrf, span = .4)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+kb <- subset(labnotebook, athlete == "Kiki Broe"& session < 4160)#
+# & session < 4160#
+NCPalette <- c("#643165", "#8FC44E", "#F29632", "#BE8CBE", "#BAD892", "#EDAE68", "#BE8CBE", "#342D6C", "#BE8C44", "#BAD892")#
+#average time and score for each muscle session#
+kb <- ddply(kb, .(muscle, side, athlete, session, timing, team, notes), plyr:::summarise,#
+date = mean(date),#
+score = round_any(mean(score),5))#
+ggplot(kb, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=2) +#
+    geom_smooth(aes(date, score), method="loess", span=1, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf <- subset(kb, muscle == "Rectus Femoris")#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = 2)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+my_loess <- loess(score~date, data=kbrf, span = 1)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+my_loess <- loess(score~date, data=kbrf, span = .5)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+my_loess <- loess(score~date, data=kbrf, span = .9)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+warnings()
+?simpleLoess()
+kbrf <- subset(kb, muscle == "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", span=1, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = 1)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+my_loess$residuals
+my_loess$y
+my_loess$x
+my_loess$trace.hat
+my_loess$one.delta
+my_loess$two.delta
+my_loess$weights
+my_loess$enp
+my_loess$fitted
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", span=.9, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = .9)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+kbrf <- subset(kb, muscle == "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", span=.9, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = .9)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+kbrf <- subset(kb, muscle == "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", span=.7, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = .7)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+kbrf <- subset(kb, muscle == "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", span=.5, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = .5)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+kbrf <- subset(kb, muscle == "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", span=.6, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = .6)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+kbrf <- subset(kb, muscle == "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", span=.7, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = .7)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+kbrf <- subset(kb, muscle == "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", span=.67, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = .67)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+kbrf <- subset(kb, muscle != "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", span=1, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = 1)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+kbrf <- subset(kb, muscle != "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", span=.7, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = .7)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+kbrf <- subset(kb, muscle != "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", span=.67, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = .67)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+kbrf <- subset(kb, muscle != "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", span=.57, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))#
+kbrf$date <- as.numeric(kbrf$date)#
+#
+my_loess <- loess(score~date, data=kbrf, span = .57)#
+curve <- as.data.frame(my_loess$fitted)#
+curve
+warnings()
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", family = "symmetric", span=1, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))
+kbrf <- subset(kb, muscle != "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", family = "symmetric", span=1, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))
+kbrf <- subset(kb, muscle != "Rectus Femoris")#
+#
+ggplot(kbrf, aes(date, score, group = muscle, color = muscle)) + #
+    geom_point(size=5) +#
+    geom_smooth(aes(date, score), method="loess", family = "symmetric", span=.5, alpha = .01, size=2) +#
+    scale_colour_manual(values=NCPalette) +#
+    scale_x_datetime(breaks = date_breaks("1 day"), minor_breaks = date_breaks("12 hours"), labels = date_format("%m/%d"))
+?loess()
+q()
+q
+setwd("/Users/psarnow/Dropbox/DOW/CPW_GMUBoundaries/")#
+#
+library(maptools)#
+library(gpclib)#
+library(sp)#
+library(ggplot2)#
+library(ggmap)#
+library(rgdal)#
+#
+gpclibPermit()
+shapefile <- readShapeSpatial("BigGameGMUBoundaries03172015.shp", proj4string = CRS("+proj=utm +zone=13"))
+summary(shapefile)
+shapefile1 <- readOGR(dsn = "BigGameGMUBoundaries03172015.shp", layer = "GMUID")
+shapefile <- readShapeSpatial("BigGameGMUBoundaries03172015.shp", proj4string = CRS("+proj=utm +zone=13"))#
+shapefile1 <- readOGR(dsn = "shapefile", layer = "GMUID")
+shapefile <- readShapeSpatial("BigGameGMUBoundaries03172015.shp", proj4string = CRS("+proj=utm +zone=13"))#
+shapefile1 <- readOGR(dsn = shapefile, layer = "GMUID")
+str(shapefile)
+plot(shapefile[shapefile@data$SHAPE_area>10000])
+plot(shapefile[shapefile@data$SHAPE_area>10000,])
+plot(shapefile[shapefile@data$SHAPE_area>1000,])
+plot(shapefile[shapefile@data$SHAPE_area>100,])
+plot(shapefile[shapefile@data$SHAPE_area>10,])
+plot(shapefile[shapefile@data$SHAPE_area>1,])
+head(shapefile@data)
+plot(shapefile[shapefile@data$SHAPE_area>10000000000,])
+plot(shapefile[shapefile@data$SHAPE_area>100000000,])
+plot(shapefile[shapefile@data$SHAPE_area>500000000,])
+head(shapefile@data$GMUID)
+shapefile@data$GMUID
+shapefile1 <- shapefile[shapefile$ACRES > 239323.51,]#
+plot(shapefile1)
+3
+shapefile1 <- shapefile[shapefile$ACRES > 339323.51,]#
+plot(shapefile1)
+shapefile2 <- spTransform(shapefile, CRS("+proj=longlat +datum=WGS84"))#
+#
+# convert to a data.frame for use with ggplot2/ggmap and plot#
+data <- fortify(shapefile2)#
+#
+ggplot(data = data, aes(x = long, y = lat, group = group)) + geom_path()
+ggplot(data = data, aes(x = lat, y = long, group = group)) + geom_path()
+ggplot(data = data, aes(x = long, y = lat, group = group, label = GMUID)) + geom_path() + geom_text()
+colnames(data)
+unique(data$id)
+names(shapefile)
+data <- shapefile2 %>% fortify(region = 'GMUID')
+?%>%
+??%>%
+data <- fortify(shapefile2,region = 'GMUID')
+colnames(data)
+names(data)
+data <- fortify(shapefile2,data = 'GMUID')
+colnames(data)
+data <- fortify(shapefile2,data = 'GMUID')#
+#
+library(ggmap)#
+sfMap = map = get_map(location = 'San Francisco', zoom = 12)
+library(rgdal)#
+library(ggplot2)#
+sfn = readOGR(".","sfzipcodes") %>% spTransform(CRS("+proj=longlat +datum=WGS84"))#
+ggplot(data = sfn, aes(x = long, y = lat, group = group)) + geom_path()
+sfn = readOGR(".","sfzipcodes"); spTransform(CRS("+proj=longlat +datum=WGS84"))
+??"%>%"
+require(magritter)
+require(magrittr)
+sfn = readOGR(".","sfzipcodes") %>% spTransform(CRS("+proj=longlat +datum=WGS84"))
+data <- shapefile2 %>% fortify(region = 'GMUID')
+data2  = merge(shapefile2, data@data, by.x = 'id', by.y = 'GMUID')
+data@data
+data2  = merge(data, shapefile2@data, by.x = 'id', by.y = 'GMUID')
+ggplot(data2, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = GMUID))
+colnames(data2
+)
+unique(data2$id)
+data2  = merge(data, shapefile2@data, by.x = 'id')
+data2  = merge(data, shapefile2@data, by=c("id"))
+data2  = inner_join(data, shapefile2@data, by=c("id"))
+require(dplyr)
+data2  = inner_join(data, shapefile2@data, by=c("id"))
+data2  = merge(data, shapefile2@data, by.x = 'id', by.y = 'GMUID')
+head(data2)
+data2  = merge(data, shapefile2@data, by.x = 'GMUID', by.y = 'id')
+data2  = merge(data, shapefile2@data, by.x = 'id', by.y = 'GMUID')#
+#
+ggplot(data2, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = COUNTY))
+data <- shapefile2 %>% fortify(region = 'GMUID')#
+data2  = merge(data, shapefile2@data, by.x = 'id', by.y = 'COUNTY')#
+#
+ggplot(data2, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = GMUID))
+colnames(data2)
+data2$GMUID
+data <- shapefile2 %>% fortify(region = "GMUID")#
+data2  = merge(data, shapefile2@data, by.x = 'id', by.y = 'COUNTY')#
+#
+ggplot(data2, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = GMUID))
+data2$GMUID
+data <- shapefile2 %>% fortify(region = "COUNTY")#
+data2  = merge(data, shapefile2@data, by.x = 'id', by.y = 'COUNTY')#
+#
+ggplot(data2, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = GMUID))
+ElkHarvestRifleAll <- read.csv(file = "/Users/psarnow/Dropbox/DOW/ElkHarvestRifleAll.csv")
+library(dplyr)
+ElkHarvestRifleAll$GMUID <- as.character(ElkHarvestRifleAll$GMUID)#
+data2$GMUID <- as.character(data2$GMUID)
+data3 <- inner_join(data2,ElkHarvestRifleAll, by=c("GMUID"))
+ggplot(data3, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = Success))
+ggplot(data3, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = Success)) +#
+    scale_fill_continuous(low = "red", high = "blue", na.value = "grey50",#
+      guide = "colourbar")
+ggplot(data3, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = Success),colour = "black", size = .3) +#
+    scale_fill_continuous(low = "red", high = "blue", na.value = "grey50",#
+      guide = "colourbar")
+ggplot(data3, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = Success),colour = "black", size = .3) +#
+    scale_fill_continuous(low = "#9D261D", high = "#4575B4", na.value = "grey50",#
+      guide = "colourbar")
+ggplot(data3, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = Success),colour = "black", size = .3) +#
+    scale_fill_gradient(low = "#9D261D", high = "#4575B4", na.value = "grey50",#
+      guide = "colourbar")
+qmap("colorado", zoom = 7, maptype = "roadmap", color="bw") +#
+    geom_polygon(data3, aes(long, lat, group = group,fill = Success),colour = "black", size = .3, alpha=.5) +#
+    scale_fill_gradient(low = "#9D261D", high = "#4575B4", na.value = "grey50",#
+      guide = "colourbar")
+qmap("colorado", zoom = 7, maptype = "roadmap", color="bw")
+ggplot(data3, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = Success),colour = "black", size = .3, alpha=.5) +#
+    scale_fill_gradient(low = "#9D261D", high = "#4575B4", na.value = "grey50", guide = "colourbar") +#
+    theme(axis.title=element_text(size=20, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(axis.title.x=element_text()) +#
+    theme(axis.text.x=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(axis.text.y=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(plot.title=element_text(size=30, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(legend.text=element_text(size=20, family="ApexRounded-Medium")) +#
+    theme(legend.title=element_text(size=25, colour="#434348", family="ApexRounded-Medium")) +#
+    theme(panel.background = element_rect(fill='#f7f9fc')) +#
+    theme(panel.grid.major= element_line(color='#666363')) +#
+    theme(panel.grid.minor= element_line(color='#afaeae')) +#
+    theme(strip.text.x = element_text(size = 12,family="ApexRounded-Medium")) +#
+    theme(strip.background=element_rect(fill="#afaeae", colour="#afaeae")) +#
+    ggtitle("2013 Colorado Harvest Success Rates - All Rifle")
+ggplot(data3, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = Success),colour = "black", size = .3, alpha=.5) +#
+    scale_fill_gradient(low = "#9D261D", high = "#4575B4", na.value = "grey50", guide = "colourbar") +#
+    xlab("") + #
+    ylab("") +#
+    theme(axis.title=element_text(size=20, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(axis.title.x=element_text()) +#
+    theme(axis.text.x=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(axis.text.y=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(plot.title=element_text(size=25, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(legend.text=element_text(size=20, family="ApexRounded-Medium")) +#
+    theme(legend.title=element_text(size=20, colour="#434348", family="ApexRounded-Medium")) +#
+    theme(panel.background = element_rect(fill='white')) +#
+    theme(panel.grid.major= element_line(color='white')) +#
+    theme(panel.grid.minor= element_line(color='white')) +#
+    ggtitle("2013 Colorado Harvest Success Rates - All Rifle")
+ggplot(data3, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = Success, label = GMUID),colour = "black", size = .3) +#
+    geom_text() +#
+    scale_fill_gradient(low = "#9D261D", high = "#4575B4", na.value = "grey50", guide = "colourbar") +#
+    xlab("") + #
+    ylab("") +#
+    theme(axis.title=element_text(size=20, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(axis.title.x=element_text()) +#
+    theme(axis.text.x=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(axis.text.y=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(plot.title=element_text(size=25, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(legend.text=element_text(size=20, family="ApexRounded-Medium")) +#
+    theme(legend.title=element_text(size=20, colour="#434348", family="ApexRounded-Medium")) +#
+    theme(panel.background = element_rect(fill='white')) +#
+    theme(panel.grid.major= element_line(color='white')) +#
+    theme(panel.grid.minor= element_line(color='white')) +#
+    ggtitle("2013 Colorado Harvest Success Rates - All Rifle")
+ggplot(data3, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = Success),colour = "black", size = .3) +#
+    geom_text(aes(label = GMUID)) +#
+    scale_fill_gradient(low = "#9D261D", high = "#4575B4", na.value = "grey50", guide = "colourbar") +#
+    xlab("") + #
+    ylab("") +#
+    theme(axis.title=element_text(size=20, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(axis.title.x=element_text()) +#
+    theme(axis.text.x=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(axis.text.y=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(plot.title=element_text(size=25, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(legend.text=element_text(size=20, family="ApexRounded-Medium")) +#
+    theme(legend.title=element_text(size=20, colour="#434348", family="ApexRounded-Medium")) +#
+    theme(panel.background = element_rect(fill='white')) +#
+    theme(panel.grid.major= element_line(color='white')) +#
+    theme(panel.grid.minor= element_line(color='white')) +#
+    ggtitle("2013 Colorado Harvest Success Rates - All Rifle")
+ggplot(data3, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = Success),colour = "black", size = .3) +#
+    # geom_text(aes(label = GMUID)) +#
+    # scale_fill_gradient(low = "#9D261D", high = "#4575B4", na.value = "grey50", guide = "colourbar") +#
+    scale_fill_brewer(type="seq") +#
+    xlab("") + #
+    ylab("") +#
+    theme(axis.title=element_text(size=20, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(axis.title.x=element_text()) +#
+    theme(axis.text.x=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(axis.text.y=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(plot.title=element_text(size=25, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(legend.text=element_text(size=20, family="ApexRounded-Medium")) +#
+    theme(legend.title=element_text(size=20, colour="#434348", family="ApexRounded-Medium")) +#
+    theme(panel.background = element_rect(fill='white')) +#
+    theme(panel.grid.major= element_line(color='white')) +#
+    theme(panel.grid.minor= element_line(color='white')) +#
+    ggtitle("2013 Colorado Harvest Success Rates - All Rifle")
+?scales::brewer_pal
+ggplot(data3, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = Success),colour = "black", size = .3) +#
+    # geom_text(aes(label = GMUID)) +#
+    # scale_fill_gradient(low = "#9D261D", high = "#4575B4", na.value = "grey50", guide = "colourbar") +#
+    scale_fill_brewer(palette="RdYlBu") +#
+    xlab("") + #
+    ylab("") +#
+    theme(axis.title=element_text(size=20, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(axis.title.x=element_text()) +#
+    theme(axis.text.x=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(axis.text.y=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(plot.title=element_text(size=25, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(legend.text=element_text(size=20, family="ApexRounded-Medium")) +#
+    theme(legend.title=element_text(size=20, colour="#434348", family="ApexRounded-Medium")) +#
+    theme(panel.background = element_rect(fill='white')) +#
+    theme(panel.grid.major= element_line(color='white')) +#
+    theme(panel.grid.minor= element_line(color='white')) +#
+    ggtitle("2013 Colorado Harvest Success Rates - All Rifle")
+ggplot(data3, aes(long, lat, group = group)) + #
+    geom_polygon(aes(fill = Success),colour = "black", size = .3) +#
+    # geom_text(aes(label = GMUID)) +#
+    # scale_fill_gradient(low = "#9D261D", high = "#4575B4", na.value = "grey50", guide = "colourbar") +#
+    # scale_fill_brewer(palette="RdYlBu") +#
+    scale_fill_gradientn(scale_fill_brewer(palette="RdYlBu")(0,60)) +#
+    xlab("") + #
+    ylab("") +#
+    theme(axis.title=element_text(size=20, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(axis.title.x=element_text()) +#
+    theme(axis.text.x=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(axis.text.y=element_text(size=0, family="ApexRounded-Medium")) +#
+    theme(plot.title=element_text(size=25, colour="#434348", family="ApexRounded-Bold")) +#
+    theme(legend.text=element_text(size=20, family="ApexRounded-Medium")) +#
+    theme(legend.title=element_text(size=20, colour="#434348", family="ApexRounded-Medium")) +#
+    theme(panel.background = element_rect(fill='white')) +#
+    theme(panel.grid.major= element_line(color='white')) +#
+    theme(panel.grid.minor= element_line(color='white')) +#
+    ggtitle("2013 Colorado Harvest Success Rates - All Rifle")
+q()
