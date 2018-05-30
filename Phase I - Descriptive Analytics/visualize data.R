@@ -33,7 +33,7 @@ COElkRifleInspect$Harvest <- as.numeric(COElkRifleInspect$Harvest)
 # some basic views
 
 # overall state success by year
-COElkRifleYearSuccess <- summarise(group_by(COElkRifleInspect,year),
+COElkRifleYearSuccess <- dplyr::summarise(group_by(COElkRifleInspect,year),
                                 success = mean(Success),
                                 harvest = sum(Harvest))
 
@@ -50,7 +50,7 @@ ggplot(COElkRifleYearSuccess, aes(as.character(year),harvest)) +
   ggtitle("Statewide Rifle Elk Hunting Harvest")
 
 # overall state success by season
-COElkRifleSeason <- summarise(group_by(COElkRifleInspect,season),
+COElkRifleSeason <- dplyr::summarise(group_by(COElkRifleInspect,season),
                                    success = mean(Success),
                                    harvest = sum(Harvest))
 
