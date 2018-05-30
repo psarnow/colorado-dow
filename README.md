@@ -13,10 +13,17 @@ https://dowproject.shinyapps.io/GJSON/
 
 This year I'd like to walk through the analytics roadmap and detail the nuances of each phase.  The increase in value and difficulty as we progress through the phases should be pretty apparent.
 
+I will demonstrate model building techniques common to Data Scientists by utilizing R
+
 ## Phase I -- Descriptive Analytics (What happened)
 I would like to hunt next year and would like to know which season will provide me the best chance of success for a certain Unit.  How did things go in past years?
 
 I would like to hunt next year in a certain season, but am open to which Unit to hunt in. Which one will provide me the best opportunity of success? How did things go in past years?
+#### Step 1 -- Data Acquisition
+http://rpubs.com/psarnow/393142
+#### Step 2 -- Wrangle the data
+#### Step 3 -- Chart results
+http://rpubs.com/psarnow/393161
 
 ## Phase II -- Diagnostic Analytics (Why did it happen)
 Any relationship between Units and their results?
