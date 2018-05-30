@@ -22,6 +22,8 @@ I would like to hunt next year in a certain season, but am open to which Unit to
 #### Step 1 -- Data Acquisition
 http://rpubs.com/psarnow/393142
 #### Step 2 -- Wrangle the data
+#### Step 3 -- Chart results
+http://rpubs.com/psarnow/393161
 
 ## Phase II -- Diagnostic Analytics (Why did it happen)
 Any relationship between Units and their results?
