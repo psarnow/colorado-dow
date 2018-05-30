@@ -1,8 +1,18 @@
 #' ---
-#' title: "Download and Read PDF Hunt Tables from Colorado DOW"
+#' title: "Download and Read PDF Hunt Tables from Colorado CPW"
 #' author: "Pierre Sarnow"
 #' ---
 
+#' ## Description
+#' Colorado Parks and Wildlife (CPW) aka Colorado Department of Wildlife (CDOW)
+#' provides historical statistics on Big Game hunts. The tables are organized by year
+#' and available for download in pdf format.
+#' In the case of the project we are solely interested in Elk Rifle Hunting on public
+#' land.
+#' The tables are organized by hunting seasons (First-Fourth), as well as by hunting regions (Units)
+#' The hunting regions vary very slightly from year to year but for the most part have
+#' been consistent for many years.
+#'
 setwd("~/_code/colorado-dow/datasets")
 
 #' Load required libraries for acquiring data from pdf
@@ -16,15 +26,15 @@ years <- c(2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017)
 COElkRifleAll <- NULL # Initialize
 for (iyear in years) {
   
-  if (iyear >= 2014) {
-    download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
-                        iyear,"StatewideElkHarvest.pdf",sep=""),
-                  paste(iyear,"COElkHarvest",sep=""))
-  } else {
-    download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
-                        iyear,"ElkHarvestSurvey.pdf",sep=""),
-                  paste(iyear,"COElkHarvest",sep=""))
-  }
+  # if (iyear >= 2014) {
+  #   download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
+  #                       iyear,"StatewideElkHarvest.pdf",sep=""),
+  #                 paste(iyear,"COElkHarvest",sep=""))
+  # } else {
+  #   download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
+  #                       iyear,"ElkHarvestSurvey.pdf",sep=""),
+  #                 paste(iyear,"COElkHarvest",sep=""))
+  # }
   
   # This function will directly export the raw text in a character vector with spaces to show 
   # the white space and \n to show the line breaks.
@@ -222,6 +232,25 @@ for (iyear in years) {
   COElkRifleAll <- rbind(COElkRifleAll,COElkRifle)
 
 }
+
+#' Clean up dataframe fields
+#' It may happen that when reading numeric data into R (usually, when reading in a file), they come in as factors. 
+#' If f is such a factor object, you can use
+# as.numeric(as.character(f)) to get the numbers back. 
+#' More efficient, but harder to remember, is
+# as.numeric(levels(f))[as.integer(f)]
+#' However, there are still implications in our data as there are commas present for values in the thousands.
+#' As-is converting to numeric using the factor levels will coerce them to NAs
+#' So we will need to convert to character, remove the commas, then convert to numeric
+#' 
+COElkRifleAll$Hunters <- as.numeric(gsub(",", "", COElkRifleAll$Hunters))
+COElkRifleAll$Days <- as.numeric(gsub(",", "", COElkRifleAll$Days))
+#' TODO make the gsub search each column
+
+
+COElkRifleAll$Success <- as.numeric(levels(COElkRifleAll$Success))[as.integer(COElkRifleAll$Success)]
+COElkRifleAll$Harvest <- as.numeric(levels(COElkRifleAll$Harvest))[as.integer(COElkRifleAll$Harvest)]
+COElkRifleAll$season <- as.character(COElkRifleAll$season)
 
 #' Peek at the dataframe
 head(COElkRifleAll)
