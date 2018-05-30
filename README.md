@@ -1,12 +1,12 @@
 # Colorado Department of Wildlife big game hunt statistics (colorado-dow)
-## Project Description - Why did we choose it?
+## Project Description - Why did I choose it?
 I've personally spent countless hours pouring over hunt tables to decide where/when to hunt. Some analytical visual representations would certainly provide a more valuable solution. These will also lead to more questions about historical results.
 
 This project has many variables that determine differing outcomes.
 
 There are influences from multiple environments (supply/demand/regulations/weather)
 
-This project aslo has an intuitive progression of the Analytics Roadmap
+This project also has an intuitive progression of the Analytics Roadmap
 
 I started this back in 2015 which culminated into a Web-app example
 https://dowproject.shinyapps.io/GJSON/
