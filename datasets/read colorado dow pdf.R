@@ -3,6 +3,8 @@
 #' author: "Pierre Sarnow"
 #' ---
 
+setwd("~/_code/colorado-dow/datasets")
+
 #' Load required libraries for acquiring data from pdf
 library(pdftools,quietly = T)
 library(stringr,quietly = T)
@@ -10,30 +12,31 @@ library(stringr,quietly = T)
 # Identify the years that CDOW will provide tables for in this pdf format
 years <- c(2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017)
 
+#'  Loop through years
 COElkRifleAll <- NULL # Initialize
-for (iyear in years) { # Loop through years
+for (iyear in years) {
   
-  # Lets get started by downloading the pdf from cpw
   if (iyear >= 2014) {
-    download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",iyear,"StatewideElkHarvest.pdf",sep=""),
-                  paste("datasets/",iyear,"COElkHarvest",sep=""))
+    download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
+                        iyear,"StatewideElkHarvest.pdf",sep=""),
+                  paste(iyear,"COElkHarvest",sep=""))
   } else {
-    download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",iyear,"ElkHarvestSurvey.pdf",sep=""),
-                  paste("datasets/",iyear,"COElkHarvest",sep=""))
+    download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
+                        iyear,"ElkHarvestSurvey.pdf",sep=""),
+                  paste(iyear,"COElkHarvest",sep=""))
   }
   
   # This function will directly export the raw text in a character vector with spaces to show 
   # the white space and \n to show the line breaks.
-  COElk <- pdf_text(paste("datasets/",iyear,"COElkHarvest",sep=""))
+  COElk <- pdf_text(paste(iyear,"COElkHarvest",sep=""))
   
   # Having a full page in one element of a vector is not the most practical. Using strsplit 
-  # will help separate lines from each other:
+  # will help separate lines from each other
   COElka <- strsplit(COElk, "\n")
   
   # years starting in 2014 have a cover page or table of contents
   if (iyear >= 2014) {
-    # remove cover page (map, or table of contents)
-    COElka <- COElka[-1]
+    COElka <- COElka[-1] # remove cover page (map, or table of contents)
   }
   
   # The document holds more information than we are after.
@@ -81,7 +84,7 @@ for (iyear in years) { # Loop through years
   # unlist page elements
   COElkd <- unlist(COElkc)
   
-  ######## SEASON ONE ######## 
+  ######## SEASON ONE ######## (could make a season loop as well)
   # identify season 1 data
   seasonONEstart <- grep(tableheadings[1], COElkd)[1]
   seasonONEend <- grep(tableheadings[2], COElkd)[1]
@@ -91,9 +94,8 @@ for (iyear in years) { # Loop through years
   removeheaderrows <- grep(paste(iyear,"Elk Harvest"), seasonONE)
   seasonONE <- seasonONE[-removeheaderrows]
   
-  # possible column names 
+  # determine column names 
   columnnames <- grep("([:alpha:])", seasonONE)
-  # numeric data
   seasonONE1 <- seasonONE[-columnnames]
   columnnames1 <- seasonONE[columnnames]
   columnnames1 <- columnnames1[-length(columnnames1)] # we know the last row is a 'Total' summary, not a name
@@ -125,9 +127,8 @@ for (iyear in years) { # Loop through years
   removeheaderrows <- grep(" Elk Harvest", seasonTWO)
   seasonTWO <- seasonTWO[-removeheaderrows]
   
-  # possible column names 
+  # determine column names 
   columnnames <- grep("([:alpha:])", seasonTWO)
-  # numeric data
   seasonTWO1 <- seasonTWO[-columnnames]
   columnnames1 <- seasonTWO[columnnames]
   columnnames1 <- columnnames1[-length(columnnames1)] # we know the last row is a 'Total' summary, not a name
@@ -150,7 +151,7 @@ for (iyear in years) { # Loop through years
   seasonTWO3$season <- 2
   
   ######## SEASON THREE ######## 
-  # identify season 2 data
+  # identify season 3 data
   seasonTHREEstart <- grep(tableheadings[3], COElkd)[1]
   seasonTHREEend <- grep(tableheadings[4], COElkd)[1]
   seasonTHREE <- COElkd[((seasonTHREEstart+1):(seasonTHREEend-1))]
@@ -159,9 +160,8 @@ for (iyear in years) { # Loop through years
   removeheaderrows <- grep(" Elk Harvest", seasonTHREE)
   seasonTHREE <- seasonTHREE[-removeheaderrows]
   
-  # possible column names 
+  # determine column names
   columnnames <- grep("([:alpha:])", seasonTHREE)
-  # numeric data
   seasonTHREE1 <- seasonTHREE[-columnnames]
   columnnames1 <- seasonTHREE[columnnames]
   columnnames1 <- columnnames1[-length(columnnames1)] # we know the last row is a 'Total' summary, not a name
@@ -185,7 +185,7 @@ for (iyear in years) { # Loop through years
   
   
   ######## SEASON FOUR ######## 
-  # identify season 2 data
+  # identify season 4 data
   seasonFOURstart <- grep(tableheadings[4], COElkd)[1]
   seasonFOUR <- COElkd[((seasonFOURstart+1):(length(COElkd)))] # to the end
   
@@ -193,9 +193,8 @@ for (iyear in years) { # Loop through years
   removeheaderrows <- grep(" Elk Harvest", seasonFOUR)
   seasonFOUR <- seasonFOUR[-removeheaderrows]
   
-  # possible column names 
+  # determine column names 
   columnnames <- grep("([:alpha:])", seasonFOUR)
-  # numeric data
   seasonFOUR1 <- seasonFOUR[-columnnames]
   columnnames1 <- seasonFOUR[columnnames]
   columnnames1 <- columnnames1[-length(columnnames1)] # we know the last row is a 'Total' summary, not a name
@@ -224,3 +223,5 @@ for (iyear in years) { # Loop through years
 
 }
 
+#' Peek at the dataframe
+head(COElkRifleAll)
