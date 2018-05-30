@@ -13,6 +13,8 @@ https://dowproject.shinyapps.io/GJSON/
 
 This year I'd like to walk through the analytics roadmap and detail the nuances of each phase.  The increase in value and difficulty as we progress through the phases should be pretty apparent.
 
+I will demonstrate model building techniques common to Data Scientists by utilizing R
+
 ## Phase I -- Descriptive Analytics (What happened)
 I would like to hunt next year and would like to know which season will provide me the best chance of success for a certain Unit.  How did things go in past years?
 
