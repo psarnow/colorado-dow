@@ -17,7 +17,7 @@ I will demonstrate model building techniques common to Data Scientists by utiliz
 Its also important to note that data modelers have a sense of what they are modeling. Intuition and content expertise are incredibly valuable.  In this case I'll note that I have been an elk hunter for decades, and am also familiar with the data provided from CPW after attempting to make sense of their hunt tables over the years.
 
 ## Phase I -- Descriptive Analytics (What happened)
-*Goal* I would like to hunt next year and would like to know which season will provide me the best chance of success for a certain Unit.  How did things go in past years?
+**Goal** I would like to hunt next year and would like to know which season will provide me the best chance of success for a certain Unit.  How did things go in past years?
 
 #### Step 1 -- Data Acquisition
 http://rpubs.com/psarnow/393142
