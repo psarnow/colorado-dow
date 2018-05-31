@@ -120,7 +120,7 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">Download and Read PDF Hunt Tables from Colorado CPW</h1>
 <h4 class="author"><em>Pierre Sarnow</em></h4>
-<h4 class="date"><em>Wed May 30 14:43:19 2018</em></h4>
+<h4 class="date"><em>Thu May 31 08:49:04 2018</em></h4>
 
 </div>
 
@@ -238,7 +238,7 @@ for (iyear in years) {
   colnames(seasonONE3) &lt;- columnnames3 # apply our column names
   
   # add the season column
-  seasonONE3$season &lt;- 1
+  seasonONE3$Season &lt;- 1
   
   ######## SEASON TWO ######## 
   # identify season 2 data
@@ -271,7 +271,7 @@ for (iyear in years) {
   colnames(seasonTWO3) &lt;- columnnames3 # apply our column names
   
   # add the season column
-  seasonTWO3$season &lt;- 2
+  seasonTWO3$Season &lt;- 2
   
   ######## SEASON THREE ######## 
   # identify season 3 data
@@ -304,7 +304,7 @@ for (iyear in years) {
   colnames(seasonTHREE3) &lt;- columnnames3 # apply our column names
   
   # add the season column
-  seasonTHREE3$season &lt;- 3
+  seasonTHREE3$Season &lt;- 3
   
   
   ######## SEASON FOUR ######## 
@@ -337,11 +337,11 @@ for (iyear in years) {
   colnames(seasonFOUR3) &lt;- columnnames3 # apply our column names
   
   # add the season column
-  seasonFOUR3$season &lt;- 4
+  seasonFOUR3$Season &lt;- 4
   
   #Combine
   COElkRifle &lt;- rbind(seasonONE3,seasonTWO3,seasonTHREE3,seasonFOUR3)
-  COElkRifle$year &lt;- iyear
+  COElkRifle$Year &lt;- iyear
   COElkRifleAll &lt;- rbind(COElkRifleAll,COElkRifle)
 
 }</code></pre>
@@ -351,20 +351,33 @@ for (iyear in years) {
 <pre class="r"><code># as.numeric(levels(f))[as.integer(f)]</code></pre>
 <p>However, there are still implications in our data as there are commas present for values in the thousands. As-is converting to numeric using the factor levels will coerce them to NAs So we will need to convert to character, remove the commas, then convert to numeric</p>
 <pre class="r"><code>COElkRifleAll$Hunters &lt;- as.numeric(gsub(&quot;,&quot;, &quot;&quot;, COElkRifleAll$Hunters))
-COElkRifleAll$Days &lt;- as.numeric(gsub(&quot;,&quot;, &quot;&quot;, COElkRifleAll$Days))</code></pre>
-<p>TODO make the gsub search each column</p>
-<pre class="r"><code>COElkRifleAll$Success &lt;- as.numeric(levels(COElkRifleAll$Success))[as.integer(COElkRifleAll$Success)]
+COElkRifleAll$Days &lt;- as.numeric(gsub(&quot;,&quot;, &quot;&quot;, COElkRifleAll$Days))
+# TODO make the gsub search each column
+
+COElkRifleAll$Success &lt;- as.numeric(levels(COElkRifleAll$Success))[as.integer(COElkRifleAll$Success)]
 COElkRifleAll$Harvest &lt;- as.numeric(levels(COElkRifleAll$Harvest))[as.integer(COElkRifleAll$Harvest)]
-COElkRifleAll$season &lt;- as.character(COElkRifleAll$season)</code></pre>
+COElkRifleAll$Season &lt;- as.character(COElkRifleAll$Season)
+COElkRifleAll$Year &lt;- as.character(COElkRifleAll$Year)</code></pre>
+<p>Create new statistics based on investigation</p>
+<pre class="r"><code># How much effort it takes to have a successful result
+COElkRifleAll$Harvest_Effort &lt;- COElkRifleAll$Days / COElkRifleAll$Harvest # From Phase I investigation
+COElkRifleAll$Harvest_Effort[is.infinite(COElkRifleAll$Harvest_Effort)] &lt;- NA # we get an inf where there was no harvest</code></pre>
 <p>Peek at the dataframe</p>
 <pre class="r"><code>head(COElkRifleAll)</code></pre>
-<pre><code>##   Unit Bulls Cows Calves Harvest Hunters Success Days season year
+<pre><code>##   Unit Bulls Cows Calves Harvest Hunters Success Days Season Year
 ## 1  411     0    0      0       0      26       0   79      1 2006
 ## 2   42    34    3      0      37     125      30  353      1 2006
 ## 3  421    44   38      0      82     351      23 1236      1 2006
 ## 4   43    56   39      9     104     472      22 1699      1 2006
 ## 5   44    53   37     10     100     474      21 1485      1 2006
-## 6  444    17   39      5      61     285      21  892      1 2006</code></pre>
+## 6  444    17   39      5      61     285      21  892      1 2006
+##   Harvest_Effort
+## 1             NA
+## 2       9.540541
+## 3      15.073171
+## 4      16.336538
+## 5      14.850000
+## 6      14.622951</code></pre>
 </div>
 
 

@@ -40,72 +40,117 @@ COElkRifleInspect <- COElkRifleAll
 #' best chance of success for a certain Unit (Unit 77).  How did things go in past years?
 #'
 #' First lets look at the entire state as a whole
-COElkRifleSuccess <- summarise(group_by(COElkRifleInspect,year),
-                                success = mean(Success))
+COElkRifleSuccess <- summarise(group_by(COElkRifleInspect,Year),
+                               success = mean(Success),
+                               Harvest_Effort = mean(Harvest_Effort,na.rm = T))
 COElkRifleSuccess
 
-ggplot(COElkRifleSuccess, aes(as.character(year),success)) +
+ggplot(COElkRifleSuccess, aes(Year,success)) +
   geom_bar(stat="identity") +
-  xlab("year") +
   prettytheme +
   ggtitle("Statewide Rifle Elk Hunting Success")
 
 #' Overall I should expect a success rate of ~20%, and besides 2016 things appear to be consistent.
+#' 
 #' FUTURE question, what happened in 2016 that caused success rates to drop statewide?
 #'
 #' How about statewide per season?
-COElkRifleSuccess1 <- summarise(group_by(COElkRifleInspect,season),
-                               success = mean(Success))
+COElkRifleSuccess1 <- summarise(group_by(COElkRifleInspect,Season),
+                               success = mean(Success),
+                               Harvest_Effort = mean(Harvest_Effort,na.rm = T))
 COElkRifleSuccess1
 
-ggplot(COElkRifleSuccess1, aes(season,success)) +
+ggplot(COElkRifleSuccess1, aes(Season,success)) +
   geom_bar(stat="identity") +
   prettytheme +
   ggtitle("Statewide Rifle Elk Hunting Success")
 #' Looks like the first season has the best success over all of the years,
 #' and success drops through the main seasons before improving a bit for the last season.
-#' 
-#' 
+#'
 #' Now to our question. What about Unit 77?
 COElkRifleSuccess77 <- filter(COElkRifleInspect, Unit == 77) # filter out Unit 77
 
-ggplot(COElkRifleSuccess77, aes(season,Success)) +
+ggplot(COElkRifleSuccess77, aes(Season,Success)) +
   geom_bar(stat="identity",position = 'dodge') +
   scale_fill_manual(values = hcpalette) +
   prettytheme +
   ggtitle("Unit 77 Rifle Elk Hunting Success\n2006-2017")
 
-#' Unit 77 has the same trend thru First to Third seasons, but the Fourth season is the best
+#' Unit 77 has the same trend thru First to Third Seasons, but the Fourth season is the best
 #' 
 #' Lets see if this is always the case
 
-ggplot(COElkRifleSuccess77, aes(as.character(year),Success,group=season,fill=season)) +
+ggplot(COElkRifleSuccess77, aes(Year,Success,group=Season,fill=Season)) +
   geom_bar(stat="identity",position = 'dodge') +
   scale_fill_manual(values = hcpalette) +
   prettytheme +
   ggtitle("Unit 77 Rifle Elk Hunting Success by Year")
 
-#' Recently, the first and fourth seasons have the highest success. Last season the Fourth season
-#' had the best success rate
+#' Recently, the first and fourth seasons have the highest success. Last year the Fourth Season
+#' had the best success rate.
 #' 
-#' Convesely the Third season has had the highest success only once, in 2009
+#' Conversely, the Third season has had the highest success only once, in 2009.
 #' 
 
 #' At this point I believe my choice is between First and Fourth season. One of the points of consideration
 #' could be the type of weather I enjoy to hunt in. Subjectively, early October is generally much nicer than late November.
+#'
 #' FUTURE question, what weather data can we attach to the hunt units in past years?
-#' 
+#'
 #' The hunt tables provide more data as well. Maybe I want to avoid the busy seasons with lots of hunters.
-#' Maybe I want to be sure I have access to this unit for all seasons regulated by preference points from CPW
+#' Maybe I want to be sure I have access to this unit for all seasons regulated by preference points from CPW.
+#'
 #' FUTURE question, do I have access to preference points required for hunting in certain units per season?
-#' 
-#' Lets look at the how many hunters have licenses in each of these seasons
-ggplot(COElkRifleSuccess77, aes(season,Hunters)) +
+#'
+#' Lets look at the how many hunters are in each of these seasons
+ggplot(COElkRifleSuccess77, aes(Season,Hunters)) +
   geom_bar(stat="identity",position = 'dodge') +
   scale_fill_manual(values = hcpalette) +
   prettytheme +
   ggtitle("Unit 77 Number of Rifle Hunters")
-#' The first season definately has less hunters, but it is also a shorter season, so its not a true
-#' measure of density (busy).
-#' We can create a new field using the number of Hunters and the total number of 'recreation days'
-#' .... work in progress
+#' The first season definately has less hunters, but it is also a shorter Season, so its not a true
+#' measure of density (busy). Will need to populate the table with Season Duration somehow
+#' 
+#' FUTURE add Season Durations
+#' 
+#' 
+#' Success from the CPW tables is merely Harvest / Hunters. But a truer measure might have to do with effort.
+#' Recreation Days is an estimate from CPW on how many hunter days were put in the field...regardless of how
+#' long they were out there.
+#'
+#' Maybe a good measure would be how much effort it takes to have a successful result,
+#' or Rec Days / Harvest... how much effort to harvest
+# Adding this field to the data acquisition script
+#' Again, lets start with a statewide summary to view expected results
+ggplot(COElkRifleSuccess, aes(Year,Harvest_Effort)) +
+  geom_bar(stat="identity") +
+  prettytheme +
+  ggtitle("Statewide Rifle Elk Hunting Effort Required")
+#' Not sure if this provides any important info towards my question. I do note that two years ago required an 
+#' unusually amount of extra effort.
+#'
+#' Unit 77 by season for all years can tell me overall the differences in seasonal effort
+ggplot(COElkRifleSuccess77, aes(Season,Harvest_Effort)) +
+  geom_bar(stat="identity",position = 'dodge') +
+  scale_fill_manual(values = hcpalette) +
+  prettytheme +
+  ggtitle("Unit 77 Rifle Elk Hunting Effort Required\n2006-2017")
+#' In Unit 77, it is clear that the first season will usually take the fewest amount of hunting days to have success.
+
+ggplot(COElkRifleSuccess77, aes(Year,Harvest_Effort,group=Season,fill=Season)) +
+  geom_bar(stat="identity",position = 'dodge') +
+  scale_fill_manual(values = hcpalette) +
+  prettytheme +
+  ggtitle("Unit 77 Rifle Elk Hunting Effort Required")
+#' In recent years the trend is similar. First has been easier, and then fourth season. 
+#' Last year the fourth season required the least amount of effort.
+#' 
+#' # Conclusion
+#' Using the data from these tables it appears that the first season should be my first preference for my 2018 hunt
+#' in Unit 77.
+#' 
+#' However, I have thought of additional questions or pieces to investigate.
+#' 
+#' Why does the first season have the highest success rate? Why is the required effort to be successful lower in 
+#' the first season
+

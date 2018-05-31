@@ -125,7 +125,7 @@ for (iyear in years) {
   colnames(seasonONE3) <- columnnames3 # apply our column names
   
   # add the season column
-  seasonONE3$season <- 1
+  seasonONE3$Season <- 1
   
   ######## SEASON TWO ######## 
   # identify season 2 data
@@ -158,7 +158,7 @@ for (iyear in years) {
   colnames(seasonTWO3) <- columnnames3 # apply our column names
   
   # add the season column
-  seasonTWO3$season <- 2
+  seasonTWO3$Season <- 2
   
   ######## SEASON THREE ######## 
   # identify season 3 data
@@ -191,7 +191,7 @@ for (iyear in years) {
   colnames(seasonTHREE3) <- columnnames3 # apply our column names
   
   # add the season column
-  seasonTHREE3$season <- 3
+  seasonTHREE3$Season <- 3
   
   
   ######## SEASON FOUR ######## 
@@ -224,11 +224,11 @@ for (iyear in years) {
   colnames(seasonFOUR3) <- columnnames3 # apply our column names
   
   # add the season column
-  seasonFOUR3$season <- 4
+  seasonFOUR3$Season <- 4
   
   #Combine
   COElkRifle <- rbind(seasonONE3,seasonTWO3,seasonTHREE3,seasonFOUR3)
-  COElkRifle$year <- iyear
+  COElkRifle$Year <- iyear
   COElkRifleAll <- rbind(COElkRifleAll,COElkRifle)
 
 }
@@ -245,12 +245,17 @@ for (iyear in years) {
 #' 
 COElkRifleAll$Hunters <- as.numeric(gsub(",", "", COElkRifleAll$Hunters))
 COElkRifleAll$Days <- as.numeric(gsub(",", "", COElkRifleAll$Days))
-#' TODO make the gsub search each column
-
+# TODO make the gsub search each column
 
 COElkRifleAll$Success <- as.numeric(levels(COElkRifleAll$Success))[as.integer(COElkRifleAll$Success)]
 COElkRifleAll$Harvest <- as.numeric(levels(COElkRifleAll$Harvest))[as.integer(COElkRifleAll$Harvest)]
-COElkRifleAll$season <- as.character(COElkRifleAll$season)
+COElkRifleAll$Season <- as.character(COElkRifleAll$Season)
+COElkRifleAll$Year <- as.character(COElkRifleAll$Year)
+
+#' Create new statistics based on investigation
+# How much effort it takes to have a successful result
+COElkRifleAll$Harvest_Effort <- COElkRifleAll$Days / COElkRifleAll$Harvest # From Phase I investigation
+COElkRifleAll$Harvest_Effort[is.infinite(COElkRifleAll$Harvest_Effort)] <- NA # we get an inf where there was no harvest
 
 #' Peek at the dataframe
 head(COElkRifleAll)
