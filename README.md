@@ -32,6 +32,7 @@ Are there other factors to consider?
 * Draw results
 * Herd size
 * Weather
+* Hunt season durations
 #### Step 1 -- Data Acquisition
 Herd population estimates from CPW - http://rpubs.com/psarnow/393560
 
