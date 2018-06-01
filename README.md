@@ -1,6 +1,6 @@
 # Colorado Department of Wildlife big game hunt statistics (colorado-dow)
 ## Project Description - Why did I choose it?
-I've personally spent countless hours pouring over hunt tables to decide where/when to hunt. Some analytical visual representations would certainly provide a more valuable solution. These will also lead to more questions about historical results.
+I've personally spent countless hours pouring over hunt tables to decide where/when to hunt next year. Some analytical visual representations would certainly provide a more valuable solution. These will also lead to more questions about historical results.
 
 This project has many variables that determine differing outcomes.
 
