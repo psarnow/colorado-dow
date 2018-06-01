@@ -37,6 +37,8 @@ Are there other factors to consider?
 
 [Hunt season dates from CPW](http://rpubs.com/psarnow/393655)
 
+[Coordinate locations of the CPW hunt units](http://rpubs.com/psarnow/393672)
+
 [Weather from Dark Sky](http://rpubs.com/psarnow/393658)
 
 
