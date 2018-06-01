@@ -1,13 +1,14 @@
 #' ---
-#' title: "Use CPW elk hunt statistics to determine which season to hunt in next"
+#' title: "Explore relationship between Elk herd populations and hunt results"
 #' author: "Pierre Sarnow"
 #' ---
 
-#' ### Question 1
-#' I would like to hunt next year and would like to know which season will provide me the 
-#' best chance of success for a certain Unit (Unit 77).  How did things go in past years?
+#' ### Question 2
+#' After exploring historical hunt results, I wanted to understand more about the
+#' variation from year to year. Does the herd size have an influence on number of 
+#' harvested animals or hunter success rates?
 
-setwd("~/_code/colorado-dow/Phase I - Descriptive Analytics")
+setwd("~/_code/colorado-dow/Phase II - Diagnostic Analytics")
 
 #' Load required libraries for wrangling data and charting
 library(dplyr,quietly = T)
@@ -37,27 +38,80 @@ hcpalette <- c('#7cb5ec', '#434348', '#90ed7d', '#f7a35c', '#8085e9', '#f15c80',
 
 #' Run script to get hunt tables
 source('~/_code/colorado-dow/datasets/read colorado dow pdf.R', echo=F)
-COElkRifleInspect <- COElkRifleAll
+# COElkRifleAll
+
+#' Run script to get elk population estimates
+source('~/_code/colorado-dow/datasets/read colorado dow population estimates.R', echo=F)
+# COElkPopulationAll
+
+#' Combine datatables
+COElkPopulationInspect <- left_join(COElkRifleAll,COElkPopulationAll)
 
 #' First lets look at the entire state as a whole
-COElkRifleSuccess <- summarise(group_by(COElkRifleInspect,Year),
-                               Success = mean(Success),
-                               Harvest_Effort = mean(Harvest_Effort,na.rm = T))
-COElkRifleSuccess
+COElkPopulationStatewide <- dplyr::summarise(group_by(COElkPopulationInspect,Year,Unit),
+                                             Population = mean(Unit_Pop),
+                                             Harvest = sum(Harvest))
+COElkPopulationStatewide
 
-ggplot(COElkRifleSuccess, aes(Year,Success)) +
+ggplot(COElkPopulationStatewide, aes(Year,Population)) +
   geom_bar(stat="identity") +
+  # geom_point() +
   prettytheme +
-  ggtitle("Statewide Rifle Elk Hunting Success")
+  coord_cartesian(ylim = c(250000,300000)) +
+  ggtitle("Statewide Elk Populations")
 
+ggplot(COElkPopulationStatewide, aes(Harvest,Population)) +
+  geom_point() +
+  # geom_point() +
+  prettytheme +
+  # coord_cartesian(ylim = c(15000,20000)) +
+  ggtitle("Statewide Elk Population vs Harvest")
+
+#' The herd in Unit 77 over the years
+COElkPopulation77 <- filter(COElkPopulationInspect, Unit == "77")
+COElkPopulation77year <- dplyr::summarise(group_by(COElkPopulation77,Year),
+                                          Population = mean(Population),
+                                          Harvest = sum(Harvest))
+COElkPopulation77year
+
+ggplot(COElkPopulation77year, aes(Year,Population)) +
+  geom_bar(stat="identity") +
+  # geom_point() +
+  prettytheme +
+  coord_cartesian(ylim = c(15000,20000)) +
+  ggtitle("Unit 77 Elk Populations")
+
+ggplot(COElkPopulation77year, aes(Year,Harvest)) +
+  geom_bar(stat="identity") +
+  # geom_point() +
+  prettytheme +
+  # coord_cartesian(ylim = c(15000,20000)) +
+  ggtitle("Unit 77 Elk Harvest")
+
+ggplot(COElkPopulation77year, aes(Harvest,Population)) +
+  geom_point() +
+  # geom_point() +
+  prettytheme +
+  # coord_cartesian(ylim = c(15000,20000)) +
+  ggtitle("Unit 77 Elk Population vs Harvest")
+
+
+
+
+ggplot(COElkPopulationStatewide, aes(Year,Estimate,group=DAU,fill=DAU)) +
+  geom_bar(stat="identity",position = 'dodge') +
+  # geom_point() +
+  prettytheme +
+  # coord_cartesian(ylim = c(250000,300000)) +
+  ggtitle("Statewide Elk Populations")
 #' Overall I should expect a success rate of ~20%, and besides 2016 things appear to be consistent.
 #' 
 #' **FUTURE** question, what happened in 2016 that caused success rates to drop statewide?
 #'
 #' How about statewide per season?
 COElkRifleSuccess1 <- summarise(group_by(COElkRifleInspect,Season),
-                               Success = mean(Success),
-                               Harvest_Effort = mean(Harvest_Effort,na.rm = T))
+                                Success = mean(Success),
+                                Harvest_Effort = mean(Harvest_Effort,na.rm = T))
 COElkRifleSuccess1
 
 ggplot(COElkRifleSuccess1, aes(Season,Success)) +

@@ -76,19 +76,20 @@ for (iyear in years) {
   colnames(COElkPopb2) <- columnnames3 # apply our column names
   
   COElkPopb2$Estimate <- as.numeric(gsub(",", "", COElkPopb2$Estimate)) # remove commas from Estimate
-  
   # We have been operating by Units, so lets devide the population estimate across the Units the herd is in.... 
   # assume they are evenly distributed
   COElkPopb2$Num_GMUnits <- str_count(as.character(COElkPopb2$GMUnits), pattern = ",") + 1
-  COElkPopb2$Est_Unit <- COElkPopb2$Estimate / COElkPopb2$Num_GMUnits
+  COElkPopb2$Unit_Pop <- COElkPopb2$Estimate / COElkPopb2$Num_GMUnits
 
   # get the GMUnits out
   COElkPopb3 <- separate(COElkPopb2, GMUnits, sep = ",",LETTERS)
   COElkPopb3 <- gather(COElkPopb3,"ignore",Unit,A:Z)
   COElkPopb3 <- select(COElkPopb3, -ignore)
   COElkPopb3 <- filter(COElkPopb3, !is.na(Unit))
- 
-  COElkPopb3$Year <- iyear
+  COElkPopb3$Unit <- str_trim(COElkPopb3$Unit) # remove extra whitespace
+  
+  colnames(COElkPopb3)[colnames(COElkPopb3)=="Estimate"] <- "Population" #change label for clarification
+  COElkPopb3$Year <- as.character(iyear)
   COElkPopulationAll <- rbind.fill(COElkPopulationAll,COElkPopb3)
   
 }

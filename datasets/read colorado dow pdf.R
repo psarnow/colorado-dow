@@ -228,7 +228,7 @@ for (iyear in years) {
   
   #Combine
   COElkRifle <- rbind(seasonONE3,seasonTWO3,seasonTHREE3,seasonFOUR3)
-  COElkRifle$Year <- iyear
+  COElkRifle$Year <- as.character(iyear)
   COElkRifleAll <- rbind(COElkRifleAll,COElkRifle)
 
 }
@@ -250,7 +250,7 @@ COElkRifleAll$Days <- as.numeric(gsub(",", "", COElkRifleAll$Days))
 COElkRifleAll$Success <- as.numeric(levels(COElkRifleAll$Success))[as.integer(COElkRifleAll$Success)]
 COElkRifleAll$Harvest <- as.numeric(levels(COElkRifleAll$Harvest))[as.integer(COElkRifleAll$Harvest)]
 COElkRifleAll$Season <- as.character(COElkRifleAll$Season)
-COElkRifleAll$Year <- as.character(COElkRifleAll$Year)
+COElkRifleAll$Unit <- as.character(COElkRifleAll$Unit)
 
 #' Create new statistics based on investigation
 # How much effort it takes to have a successful result
