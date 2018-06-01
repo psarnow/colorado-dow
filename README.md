@@ -20,7 +20,7 @@ Its also important to note that data modelers have a sense of what they are mode
 **Goal** I would like to hunt next year and would like to know which season will provide me the best chance of success for a certain Unit.  How did things go in past years?
 
 #### Step 1 -- Data Acquisition
-Elk hunting statistics from CPW - http://rpubs.com/psarnow/393142
+[Elk hunting statistics from CPW](http://rpubs.com/psarnow/393142)
 #### Step 2 -- Wrangle the data
 #### Step 3 -- Chart results
 Model and chart data to answer our initial questions - http://rpubs.com/psarnow/393161
