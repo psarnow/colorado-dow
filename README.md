@@ -8,8 +8,7 @@ There are influences from multiple environments (supply/demand/regulations/weath
 
 This project also has an intuitive progression of the Analytics Roadmap
 
-I started this back in 2015 which culminated into a Web-app example
-https://dowproject.shinyapps.io/GJSON/
+I started this back in 2015 which culminated into a [Web-app example](https://dowproject.shinyapps.io/GJSON/)
 
 This year I'd like to walk through the analytics roadmap and detail the nuances of each phase.  The increase in value and difficulty as we progress through the phases should be pretty apparent.
 
@@ -23,7 +22,7 @@ Its also important to note that data modelers have a sense of what they are mode
 [Elk hunting statistics from CPW](http://rpubs.com/psarnow/393142)
 #### Step 2 -- Wrangle the data
 #### Step 3 -- Chart results
-Model and chart data to answer our initial questions - http://rpubs.com/psarnow/393161
+[Model and chart data to answer our initial questions](http://rpubs.com/psarnow/393161)
 
 ## Phase II -- Diagnostic Analytics (Why did it happen)
 Any relationship between Units and their results?
@@ -34,9 +33,9 @@ Are there other factors to consider?
 * Weather
 * Hunt season dates
 #### Step 1 -- Data Acquisition
-Herd population estimates from CPW - http://rpubs.com/psarnow/393560
-Hunt season dates from CPW - http://rpubs.com/psarnow/393655
-Weather from Dark Sky - http://rpubs.com/psarnow/393658
+[Herd population estimates from CPW](http://rpubs.com/psarnow/393560)
+[Hunt season dates from CPW](http://rpubs.com/psarnow/393655)
+[Weather from Dark Sky](http://rpubs.com/psarnow/393658)
 
 ## Phase III -- Predictive Analytics (What will happen)
 * Preprocessing and data transformations
