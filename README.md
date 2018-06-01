@@ -32,9 +32,10 @@ Are there other factors to consider?
 * Draw results
 * Herd size
 * Weather
-* Hunt season durations
+* Hunt season dates
 #### Step 1 -- Data Acquisition
 Herd population estimates from CPW - http://rpubs.com/psarnow/393560
+Hunt season dates from CPW - http://rpubs.com/psarnow/393655
 
 ## Phase III -- Predictive Analytics (What will happen)
 * Preprocessing and data transformations
