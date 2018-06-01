@@ -28,7 +28,8 @@ Model and chart data to answer our initial questions - http://rpubs.com/psarnow/
 ## Phase II -- Diagnostic Analytics (Why did it happen)
 Any relationship between Units and their results?
 Are there other factors to consider?
-* Preference Points
+* Preference points
+* Draw results
 * Herd size
 * Weather
 #### Step 1 -- Data Acquisition
