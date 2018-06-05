@@ -33,6 +33,8 @@ Are there other factors to consider?
 * Weather
 * Hunt season dates
 #### Step 1 -- Data Acquisition
+[Hunt Draw summaries from CPW](http://rpubs.com/psarnow/394721)
+
 [Herd population estimates from CPW](http://rpubs.com/psarnow/393560)
 
 [Hunt season dates from CPW](http://rpubs.com/psarnow/393655)
