@@ -287,5 +287,10 @@ Seasondates$Start <- as.POSIXct(paste(Seasondates$Year,Seasondates$Start,sep = "
 Seasondates$End <- as.POSIXct(paste(Seasondates$Year,Seasondates$End,sep = "/"))
 Seasondates1 <- rbind(Seasondates1,Seasondates)
 
-Seasondates1$Duration <- round((Seasondates1$End - Seasondates1$Start) + 1) # Add season duration in days
+Seasondates1$Duration <- as.integer(round((Seasondates1$End - Seasondates1$Start) + 1)) # Add season duration in days
+
+#' Clean up some fields
+Seasondates1$Season <- as.character(Seasondates1$Season)
+Seasondates1$Year <- as.character(Seasondates1$Year)
+
 Seasondates1

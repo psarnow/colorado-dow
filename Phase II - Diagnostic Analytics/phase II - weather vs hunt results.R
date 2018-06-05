@@ -41,28 +41,87 @@ source('~/_code/colorado-dow/datasets/read colorado dow pdf.R', echo=F)
 # COElkRifleAll
 
 #' Don't run script to get weather data (due to limited daily Dark Sky polling in free version)
-# source('~/_code/colorado-dow/datasets/Get weather data fro units and hunt seasons.R', echo=F)
+# source('~/_code/colorado-dow/datasets/Get weather data for units and hunt seasons.R', echo=F)
+#'
 #' Instead we will load the weatherdata file we have saved off
 load("~/_code/colorado-dow/datasets/weatherdata5.RData")
 weatherdatainspect <- weatherdata5
 
 #' Combine datatables
 COElkWeatherInspect <- left_join(COElkRifleAll,weatherdatainspect)
+#' Add in season durations, so we can calculate Harvest/Day
+COElkWeatherInspect <- right_join(COElkWeatherInspect,select(Seasondates1,Season,Year,Duration))
+COElkWeatherInspect$Harvest_Day <- COElkWeatherInspect$Harvest / COElkWeatherInspect$Duration
+
+COElkWeatherInspect <- filter(COElkWeatherInspect, !is.na(daily.temperatureHigh))
 
 #' First lets look at the entire state as a whole
-COElkWeatherStatewide <- dplyr::summarise(group_by(COElkWeatherInspect,Year,Unit),
+COElkWeatherStatewide <- dplyr::summarise(group_by(COElkWeatherInspect,Year,Season),
                                           daily.temperatureHigh = mean(daily.temperatureHigh,na.rm = T),
                                           daily.temperatureLow = mean(daily.temperatureLow,na.rm = T),
+                                          daily.temperatureMean = mean(c(daily.temperatureHigh,daily.temperatureLow)),
                                           daily.cloudCover = mean(daily.cloudCover,na.rm = T),
                                           daily.precipProbability = mean(daily.precipProbability,na.rm = T),
                                           daily.precipType = mean(daily.precipType,na.rm = T),
                                           daily.precipAccumulation = mean(daily.precipAccumulation,na.rm = T),
+                                          daily.moonPhase = mean(daily.moonPhase,na.rm = T),
+                                          daily.pressure = mean(daily.pressure,na.rm = T),
+                                          daily.windSpeed = mean(daily.windSpeed,na.rm = T),
+                                          daily.humidity = mean(daily.humidity,na.rm = T),
+                                          daily.dewPoint = mean(daily.dewPoint,na.rm = T),
                                           Harvest = sum(Harvest),
-                                          Success = mean(Success))
+                                          Success = mean(Success,na.rm = T),
+                                          Harvest_Effort = mean(Harvest_Effort,na.rm = T),
+                                          Harvest_Day = mean(Harvest_Day,na.rm = T)
+                                          )
 COElkWeatherStatewide
 
 # TODO STATEWIDE WEATHER CHARTS
 ## need more unit weather data
+
+ggplot(COElkWeatherStatewide, aes(Year,daily.windSpeed,group=Season,fill=Season)) +
+  geom_bar(stat = 'identity',position="dodge") +
+  prettytheme +
+  scale_fill_manual(values=hcpalette) +
+  # coord_cartesian(ylim = c(1010,1025)) +
+  ggtitle("Statewide Average Temperature")
+
+
+ggplot(COElkWeatherStatewide, aes(Year,daily.temperatureMean,group=Season,fill=Season)) +
+  geom_bar(stat = 'identity',position="dodge") +
+  prettytheme +
+  scale_fill_manual(values=hcpalette) +
+  # coord_cartesian(ylim = c(30,50)) +
+  ggtitle("Statewide Average Temperature")
+
+ggplot(COElkWeatherStatewide, aes(Year,daily.windSpeed,group=Season,fill=Season)) +
+  geom_bar(stat = 'identity',position="dodge") +
+  prettytheme +
+  scale_fill_manual(values=hcpalette) +
+  # coord_cartesian(ylim = c(30,50)) +
+  ggtitle("Statewide Low Temperature")
+
+
+#' Looking for Correlations?  use the cor package for calcs and plotting tools.
+library(corrplot, quietly = T)
+#correlate data
+COElkWeatherStatewideCorr <- as.data.frame(COElkWeatherStatewide)
+COElkWeatherStatewideCorr <- select(COElkWeatherStatewideCorr, -Year, -Season)
+correlations <- cor(COElkWeatherStatewideCorr)
+corrplot(correlations)
+
+ggplot(COElkWeatherStatewide, aes(Success,daily.windSpeed)) +
+  geom_point() +
+  geom_smooth(method = "lm",se=F) +
+  prettytheme +
+  ggtitle("Historic Statewide Windspeed vs Hunter Success")
+
+ggplot(COElkWeatherStatewide, aes(Success,daily.moonPhase)) +
+  geom_point() +
+  geom_smooth(method = "lm",se=F) +
+  prettytheme +
+  ggtitle("Historic Statewide MoonPhase vs Hunter Success")
+
 
 #' Unit 77 Weather
 COElkWeather77 <- filter(COElkWeatherInspect, Unit == "77")

@@ -86,7 +86,14 @@ for (iunit in ununit) {
   }
   weatherdata4$Unit <- iunit
   weatherdata5 <- rbind.fill(weatherdata5, weatherdata4)
+  
+  # Clean up fields with missing data 'NA'
+  weatherdata5$daily.precipType[is.na(weatherdata5$daily.precipType)] <- 0
+  weatherdata5$daily.precipAccumulation[is.na(weatherdata5$daily.precipAccumulation)] <- 0
+  
   save(weatherdata5,file="weatherdata5.RData")
 }
 
+# Data progress
+print(paste("Progress",sprintf("%1.2f%%",100*n_distinct(weatherdata5$Unit)/length(ununitall))))
 head(weatherdata5)
