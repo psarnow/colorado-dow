@@ -33,15 +33,15 @@ Are there other factors to consider?
 * Weather
 * Hunt season dates
 #### Step 1 -- Data Acquisition
-[Hunt Draw summaries from CPW](http://rpubs.com/psarnow/394721)
+* [Hunt Draw summaries from CPW](http://rpubs.com/psarnow/394721)
 
-[Herd population estimates from CPW](http://rpubs.com/psarnow/393560)
+* [Herd population estimates from CPW](http://rpubs.com/psarnow/393560)
 
-[Hunt season dates from CPW](http://rpubs.com/psarnow/393655)
+* [Hunt season dates from CPW](http://rpubs.com/psarnow/393655)
 
-[Coordinate locations of the CPW hunt units](http://rpubs.com/psarnow/393672)
+* [Coordinate locations of the CPW hunt units](http://rpubs.com/psarnow/393672)
 
-[Weather from Dark Sky](http://rpubs.com/psarnow/393658)
+* [Weather from Dark Sky](http://rpubs.com/psarnow/393658)
 
 
 ## Phase III -- Predictive Analytics (What will happen)
