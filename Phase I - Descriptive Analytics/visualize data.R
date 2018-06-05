@@ -151,5 +151,5 @@ ggplot(COElkRifleSuccess77, aes(Year,Harvest_Effort,group=Season,fill=Season)) +
 #' However, I have thought of additional questions or pieces to investigate.
 #' 
 #' Why does the first season have the highest success rate? Why is the required effort to be successful lower in 
-#' the first season
+#' the first season?
 

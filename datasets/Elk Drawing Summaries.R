@@ -5,36 +5,35 @@
 
 #' ## Description
 #' Colorado Parks and Wildlife (CPW) aka Colorado Department of Wildlife (CDOW)
-#' provides historical statistics on Big Game hunts. The tables are organized by year
-#' and available for download in pdf format.
-#' In the case of the project we are solely interested in Elk Rifle Hunting on public
-#' land.
-#' The tables are organized by hunting seasons (First-Fourth), as well as by hunting regions (Units)
-#' The hunting regions vary very slightly from year to year but for the most part have
-#' been consistent for many years.
+#' provides historical statistics on Big Game Draw Results. The 'Draw' is the application process
+#' that CPW utilizes. Altogether it is rather complex when you consider all of the possible options,
+#' but here we will initially limit the analysis to the general hunt seasons, and combine
+#' the hunter types (Resident, nonResident, Youth). Hunters apply using hunt codes in the Spring,
+#' and CPW posts the results of the Draw in early summer for fall hunts.
 #'
 setwd("~/_code/colorado-dow/datasets")
-
-#' Load required libraries for acquiring data from pdf
+library(dplyr,quietly = T)
+library(tidyr,quietly = T)
 library(pdftools,quietly = T)
 library(stringr,quietly = T)
 
-# Identify the years that CDOW will provide tables for in this pdf format
+# Identify the years that CPW will provide tables for in this pdf format
 years <- c(2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017)
 
 #'  Loop through years
 COElkDrawAll <- NULL # Initialize
 for (iyear in years) {
   
-  if (iyear >= 2015) {
-    download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
-                        iyear,"ElkDrawRecap.pdf",sep=""),
-                  paste(iyear,"COElkDraw",sep=""))
-  } else {
-    download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
-                        iyear,"ElkDrawSummary.pdf",sep=""),
-                  paste(iyear,"COElkDraw",sep=""))
-  }
+  # RUN ONCE to download
+  # if (iyear >= 2015) {
+  #   download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
+  #                       iyear,"ElkDrawRecap.pdf",sep=""),
+  #                 paste(iyear,"COElkDraw",sep=""))
+  # } else {
+  #   download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
+  #                       iyear,"ElkDrawSummary.pdf",sep=""),
+  #                 paste(iyear,"COElkDraw",sep=""))
+  # }
   
   # This function will directly export the raw text in a character vector with spaces to show 
   # the white space and \n to show the line breaks.
@@ -44,16 +43,12 @@ for (iyear in years) {
   # will help separate lines from each other
   COElkDraw <- strsplit(COElkDraw, "\n")
 
-  if (iyear >= 2015) {
+  if (iyear >= 2015) { #different table format for recent years
     #remove the first two summary pages
-    # COElkDrawa <- COElkDraw[-1:-2]
-    COElkDrawa <- COElkDraw[167:168]
-    
+    COElkDrawa <- COElkDraw[-1:-2]
+
     # unlist page elements
     COElkDraw1 <- unlist(COElkDrawa)
-    # we want total Quota from the top left of each page
-    # we want total choice one from the blue box (combine Res and nonRes)
-    # and number drawn
     COElkDraw1 <- str_trim(COElkDraw1)
     # remove rows with
     removerows <- c(grep("Colorado Parks", COElkDraw1), 
@@ -68,11 +63,13 @@ for (iyear in years) {
                     )
     COElkDraw2 <- COElkDraw1[-removerows]
     
+    # index of rows that we are interested in, based on unique text of nearby fields
     HuntCode<- grep("Total Quota", COElkDraw2)-1 #hunt code is one row above this on each page
     TotalQuota <- grep("Total Quota", COElkDraw2)+3 #quota is 3 rows below
     TotalChoice1 <- grep("General Apps", COElkDraw2)+1 #choice 1 total is one row below
     NumDrawn <- grep("#DrawnHuntCode", gsub(" ", "", COElkDraw2, fixed = TRUE))+2 #drawn is 2 rows below
 
+    # put data we are intested in into a dataframe
     COElkDraw4 <- NULL
     COElkDraw4$HuntCode <- COElkDraw2[HuntCode]
     COElkDraw4 <- as.data.frame(COElkDraw4)
@@ -94,18 +91,18 @@ for (iyear in years) {
     COElkDraw4 <- rbind(COElkDraw4,multihuntcodes)
     
   } else {
-    # COElkDraw <- COElkDraw[[1]]# page one for starters, remove after we have figured this out
     # unlist page elements
     COElkDraw1 <- unlist(COElkDraw)
-    # remove page headings # can skip if we extract the rows we want later
+    # remove page headings
     pageheadings <- c(grep("Date", COElkDraw1), grep("Time", COElkDraw1), grep("Elk", COElkDraw1), grep("HntCde", COElkDraw1))
     # drop all rows with the page heading
     COElkDraw2 <- COElkDraw1[-pageheadings]
-    
+    # identify the rows we are interested in
     rowsofinterest <- grep("Orig Quota|Chcs Drawn|Choice 1 % Success", COElkDraw2)
     COElkDraw3 <- COElkDraw2[rowsofinterest]
     COElkDraw3 <- str_trim(COElkDraw3)
     
+    # put data we are intested in into a dataframe
     COElkDraw3a <- as.data.frame(COElkDraw3)
     colnames(COElkDraw3a) <- "FullString"
     
@@ -191,12 +188,19 @@ for (iyear in years) {
   COElkDraw4 <- filter(COElkDraw4, Type=="R")
   COElkDraw4 <- select(COElkDraw4, -Type)
   
+  #Clean up field classes
+  COElkDraw4$Orig_Quota <- as.numeric(COElkDraw4$Orig_Quota)
+  COElkDraw4$Ttl_Chce_1 <- as.numeric(COElkDraw4$Ttl_Chce_1)
+  COElkDraw4$Chcs_Drawn <- as.numeric(COElkDraw4$Chcs_Drawn)
+  
   #Combine
   COElkDraw4$Year <- as.character(iyear)
   COElkDrawAll <- rbind(COElkDrawAll,COElkDraw4)
   
 }
 
+#' Calculate Draw Success Rate
+COElkDrawAll$Draw_Success <- COElkDrawAll$Chcs_Drawn / COElkDrawAll$Ttl_Chce_1
 
 #' Peek at the dataframe
 head(COElkDrawAll)

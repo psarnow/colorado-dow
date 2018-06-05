@@ -1,14 +1,14 @@
 #' ---
-#' title: "Define CO elk hunt Season dates"
+#' title: "Define Colorado elk hunting season dates"
 #' author: "Pierre Sarnow"
 #' ---
 #' 
-#' These can be inserted manually.
+#' I opted to do this without a lot of automation, as there aren't many pages.
 #' I found the documents here, nothing before 2010
 # http://cpw.state.co.us/Documents/Hunting/BigGame/5YearSeasonStructure/Final2010-2014BGSSdatesrevised.pdf
 # https://cpw.state.co.us/Documents/Hunting/BigGame/5YearSeasonStructure/Big-Game-Season-Structure-Dates-2015-2019.pdf
 
-#' I've included those pdfs in the repo
+#' I've included those pdfs in the datasets directory
 
 # Regular Rifle Deer and Elk Seasons: four Seasons
 # 1st Season – 5 day Season, followed by a 2 day break – Separate Limited Elk – Opening on the first
@@ -24,7 +24,7 @@
 Seasondates1 <- NULL
 Seasondates <- NULL
 SeasondatesADD <- NULL
-# 2010
+#'## 2010
 # 1st Separate Limited Elk 10/16-10/20
 SeasondatesADD$Season <- 1
 SeasondatesADD$Start <- unlist(strsplit("10/16-10/20",split = "-"))[1]
@@ -51,7 +51,7 @@ Seasondates$Start <- as.POSIXct(paste(Seasondates$Year,Seasondates$Start,sep = "
 Seasondates$End <- as.POSIXct(paste(Seasondates$Year,Seasondates$End,sep = "/"))
 Seasondates1 <- rbind(Seasondates1,Seasondates)
 
-# 2011
+#'## 2011
 Seasondates <- NULL
 # 1st Separate Limited Elk 10/15-10/19
 SeasondatesADD$Season <- 1
@@ -79,7 +79,7 @@ Seasondates$Start <- as.POSIXct(paste(Seasondates$Year,Seasondates$Start,sep = "
 Seasondates$End <- as.POSIXct(paste(Seasondates$Year,Seasondates$End,sep = "/"))
 Seasondates1 <- rbind(Seasondates1,Seasondates)
 
-# 2012
+#'## 2012
 Seasondates <- NULL
 # 1st Separate Limited Elk 10/13-10/17
 SeasondatesADD$Season <- 1
@@ -106,9 +106,9 @@ Seasondates$Year <- 2012
 Seasondates$Start <- as.POSIXct(paste(Seasondates$Year,Seasondates$Start,sep = "/"))
 Seasondates$End <- as.POSIXct(paste(Seasondates$Year,Seasondates$End,sep = "/"))
 Seasondates1 <- rbind(Seasondates1,Seasondates)
-# 2013
-Seasondates <- NULL
 
+#'## 2013
+Seasondates <- NULL
 # 1st Separate Limited Elk 10/12-10/16
 SeasondatesADD$Season <- 1
 SeasondatesADD$Start <- unlist(strsplit("10/12-10/16",split = "-"))[1]
@@ -135,7 +135,7 @@ Seasondates$Start <- as.POSIXct(paste(Seasondates$Year,Seasondates$Start,sep = "
 Seasondates$End <- as.POSIXct(paste(Seasondates$Year,Seasondates$End,sep = "/"))
 Seasondates1 <- rbind(Seasondates1,Seasondates)
 
-# 2014
+#'## 2014
 Seasondates <- NULL
 # 1st Separate Limited Elk 10/11-10/15
 SeasondatesADD$Season <- 1
@@ -175,7 +175,7 @@ Seasondates1 <- rbind(Seasondates1,Seasondates)
 # Opening on a Saturday;
 # 4th Season – 5 day Season – Deer and Elk Combined – Opening on a Wednesday.
 
-# 2015
+#'## 2015
 Seasondates <- NULL
 # 1st Separate Limited Elk 10/10-10/14
 SeasondatesADD$Season <- 1
@@ -203,7 +203,7 @@ Seasondates$Start <- as.POSIXct(paste(Seasondates$Year,Seasondates$Start,sep = "
 Seasondates$End <- as.POSIXct(paste(Seasondates$Year,Seasondates$End,sep = "/"))
 Seasondates1 <- rbind(Seasondates1,Seasondates)
 
-# 2016
+#'## 2016
 Seasondates <- NULL
 # 1st Separate Limited Elk 10/15-10/19
 SeasondatesADD$Season <- 1
@@ -230,7 +230,8 @@ Seasondates$Year <- 2016
 Seasondates$Start <- as.POSIXct(paste(Seasondates$Year,Seasondates$Start,sep = "/"))
 Seasondates$End <- as.POSIXct(paste(Seasondates$Year,Seasondates$End,sep = "/"))
 Seasondates1 <- rbind(Seasondates1,Seasondates)
-# 2017
+
+#'## 2017
 Seasondates <- NULL
 # 1st Separate Limited Elk 10/14-10/18
 SeasondatesADD$Season <- 1
@@ -257,7 +258,8 @@ Seasondates$Year <- 2017
 Seasondates$Start <- as.POSIXct(paste(Seasondates$Year,Seasondates$Start,sep = "/"))
 Seasondates$End <- as.POSIXct(paste(Seasondates$Year,Seasondates$End,sep = "/"))
 Seasondates1 <- rbind(Seasondates1,Seasondates)
-# 2018
+
+#'## 2018
 Seasondates <- NULL
 # 1st Separate Limited Elk 10/13-10/17
 SeasondatesADD$Season <- 1

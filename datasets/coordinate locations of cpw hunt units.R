@@ -3,22 +3,22 @@
 #' author: "Pierre Sarnow"
 #' ---
 
-#' ## Step 1 -- Download Big Game GMU Boundaries from CPW
-# https://hub.arcgis.com/items/93c485b0f27e4ff68c066a4b23cbaad3
-#' I'm using a 2015 version, and I've stashed it in the datasets repo
-
 library(rgdal,quietly = T) #for reading/writing geo files
 library(rgeos,quietly = T) #for simplification and true centroid
 library(magrittr,quietly = T)
 library(ggplot2,quietly = T) #for the fortify function
 library(dplyr,quietly = T)
 
+#' ## Step 1 -- Download Big Game GMU Boundaries from CPW
+# https://hub.arcgis.com/items/93c485b0f27e4ff68c066a4b23cbaad3
+#' I'm using a 2015 version, and I've stashed it in the datasets directory
 shapefile <- rgdal::readOGR("~/_code/colorado-dow/datasets/CPW_GMUBoundaries/BigGameGMUBoundaries03172015.shp")
 shapefile$GMUID <- as.character(shapefile$GMUID)
 
-# # converting utm to longlat
+# converting utm to longlat
 shapefile <- spTransform(shapefile, CRS("+proj=longlat +datum=WGS84"))
 
+#' ## Step 2 -- Calculate the centroid of each unit
 #' Centroids of GMUID
 # use gCentroid in the rgeos package if you want the true centroid
 shapefile_centroids <- shapefile

@@ -26,6 +26,7 @@ years <- c(2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017)
 COElkRifleAll <- NULL # Initialize
 for (iyear in years) {
   
+  # RUN ONCE to download
   # if (iyear >= 2014) {
   #   download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
   #                       iyear,"StatewideElkHarvest.pdf",sep=""),
