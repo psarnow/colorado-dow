@@ -43,6 +43,7 @@ Are there other factors to consider?
 
 * [Weather from Dark Sky](http://rpubs.com/psarnow/393658)
 
+#### Step 2 -- Wrangle the data
 
 ## Phase III -- Predictive Analytics (What will happen)
 * Preprocessing and data transformations
