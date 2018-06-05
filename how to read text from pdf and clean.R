@@ -57,7 +57,7 @@ head(text2[[1]])
 # Also look at this devtools r table reader
 # https://github.com/ropensci/tabulizer
 
-
+test <- extract_tables("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/2013ElkDrawSummary.pdf",pages=1)
 ##################################################################################
 # Once you have the PDF document in R, you want to extract the actual pieces of text that interest you, 
 # and get rid of the rest.

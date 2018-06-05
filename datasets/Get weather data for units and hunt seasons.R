@@ -5,6 +5,7 @@
 #' 
 require(plyr)
 require(dplyr)
+require(lubridate)
 # Historic weather data for hunt units
 # Reference some accessible APIs here: /datasets/investigate options to gather historic weather data.R
 
@@ -74,10 +75,10 @@ for (iunit in ununit) {
         weatherdata1$daily.precipType <- as.numeric(weatherdata1$daily.precipType)
       }
       weatherdata2 <- data_frame_(unlist(list(colMeans(weatherdata1,na.rm = T)))) # calculate mean of each field through the season
-      weatherdata2$Season <- iseason
+      weatherdata2$Season <- as.character(iseason)
       weatherdata3 <- rbind.fill(weatherdata3, weatherdata2)
     }
-    weatherdata3$Year <- iyear
+    weatherdata3$Year <- as.character(iyear)
     weatherdata4 <- rbind.fill(weatherdata4, weatherdata3)
   }
   weatherdata4$Unit <- iunit
