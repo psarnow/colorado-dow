@@ -19,10 +19,10 @@ Its also important to note that data modelers have a sense of what they are mode
 **Goal** I would like to hunt next year and would like to know which season will provide me the best chance of success for a certain Unit.  How did things go in past years?
 
 #### Step 1 -- Data Acquisition
-[Elk hunting statistics from CPW](http://rpubs.com/psarnow/393142)
+* [Elk hunting statistics from CPW](http://rpubs.com/psarnow/393142)
 #### Step 2 -- Wrangle the data
 #### Step 3 -- Chart results
-[Model and chart data to answer our initial questions](http://rpubs.com/psarnow/393161)
+* [Model and chart data to answer our initial questions](http://rpubs.com/psarnow/393161)
 
 ## Phase II -- Diagnostic Analytics (Why did it happen)
 Any relationship between Units and their results?
@@ -32,15 +32,20 @@ Are there other factors to consider?
 * Herd size
 * Weather
 * Hunt season dates
+**Goal** What makes the first season in Unit 77 have the most hunter success? Why does it take less effort (hunting days) to be successful in the first season of Unit 77?
+
 #### Step 1 -- Data Acquisition
-[Herd population estimates from CPW](http://rpubs.com/psarnow/393560)
+* [Hunt Draw summaries from CPW](http://rpubs.com/psarnow/394721)
 
-[Hunt season dates from CPW](http://rpubs.com/psarnow/393655)
+* [Herd population estimates from CPW](http://rpubs.com/psarnow/393560)
 
-[Coordinate locations of the CPW hunt units](http://rpubs.com/psarnow/393672)
+* [Hunt season dates from CPW](http://rpubs.com/psarnow/393655)
 
-[Weather from Dark Sky](http://rpubs.com/psarnow/393658)
+* [Coordinate locations of the CPW hunt units](http://rpubs.com/psarnow/393672)
 
+* [Weather from Dark Sky](http://rpubs.com/psarnow/393658)
+
+#### Step 2 -- Wrangle the data
 
 ## Phase III -- Predictive Analytics (What will happen)
 * Preprocessing and data transformations
