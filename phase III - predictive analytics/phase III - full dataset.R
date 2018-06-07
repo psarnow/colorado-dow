@@ -31,6 +31,19 @@ head(filter(COElkHuntingData, Unit == "77" & Year > 2015))
 COElkHuntingData <- full_join(COElkHuntingData,COElkDrawAll2)
 head(filter(COElkHuntingData, Unit == "77" & Year > 2015))
 
+# percent of population harvested
+# the herd size is from post hunt, so for the initial herd size, we need to add in the harvest numbers
+COElkHuntingData$Herd_Harvested <- COElkHuntingData$Harvest / (COElkHuntingData$Unit_Pop + COElkHuntingData$Harvest)
+
+# #hunters to #elk hunter_elk_density
+# ideally we subtract the elk that have already been harvested in prior seasons from the population
+COElkHuntingData$Elks_Hunter <- COElkHuntingData$Unit_Pop / COElkHuntingData$Hunters
+
+#' Add in season durations, so we can calculate Harvest/Day
+COElkHuntingData <- right_join(COElkHuntingData,select(Seasondates1,Season,Year,Duration))
+COElkHuntingData$Harvest_Day <- COElkHuntingData$Harvest / COElkHuntingData$Duration
+
+filter(COElkHuntingData, Unit == "77" & Year > 2010)
 # save to directory for easy loading
 save(COElkHuntingData,file="COElkHuntingData.RData")
 

@@ -256,6 +256,7 @@ COElkRifleAll$Unit <- as.character(COElkRifleAll$Unit)
 # How much effort it takes to have a successful result
 COElkRifleAll$Harvest_Effort <- COElkRifleAll$Days / COElkRifleAll$Harvest # From Phase I investigation
 COElkRifleAll$Harvest_Effort[is.infinite(COElkRifleAll$Harvest_Effort)] <- NA # we get an inf where there was no harvest
+COElkRifleAll$Success_Harvest <- COElkRifleAll$Harvest * (COElkRifleAll$Success / 100)
 
 #' Peek at the dataframe
 head(COElkRifleAll)

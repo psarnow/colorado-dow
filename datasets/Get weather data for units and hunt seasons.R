@@ -96,6 +96,10 @@ for (iunit in ununit) {
   # Add new moonphase field, percent full
   weatherdata5$daily.FullmoonPhase <- rescale(abs(weatherdata5$daily.moonPhase - 0.5), from = c(.5,0), to = c(0,1))
 
+  # Average temp field
+  weatherdata5 <- mutate(group_by(weatherdata5,Year,Season, Unit),
+                                daily.temperatureMean = mean(c(daily.temperatureHigh,daily.temperatureLow)))
+  
   save(weatherdata5,file="weatherdata5.RData")
 }
 
