@@ -65,6 +65,7 @@ COElkWeatherStatewide <- dplyr::summarise(group_by(COElkWeatherInspect,Year,Seas
                                           daily.precipType = mean(daily.precipType,na.rm = T),
                                           daily.precipAccumulation = mean(daily.precipAccumulation,na.rm = T),
                                           daily.moonPhase = mean(daily.moonPhase,na.rm = T),
+                                          daily.FullmoonPhase = mean(daily.FullmoonPhase,na.rm = T),
                                           daily.pressure = mean(daily.pressure,na.rm = T),
                                           daily.windSpeed = mean(daily.windSpeed,na.rm = T),
                                           daily.humidity = mean(daily.humidity,na.rm = T),
@@ -122,6 +123,11 @@ ggplot(COElkWeatherStatewide, aes(Success,daily.moonPhase)) +
   prettytheme +
   ggtitle("Historic Statewide MoonPhase vs Hunter Success")
 
+ggplot(COElkWeatherStatewide, aes(Success,daily.FullmoonPhase)) +
+  geom_point() +
+  geom_smooth(method = "lm",se=F) +
+  prettytheme +
+  ggtitle("Historic Statewide FullMoonPhase vs Hunter Success")
 
 #' Unit 77 Weather
 COElkWeather77 <- filter(COElkWeatherInspect, Unit == "77")

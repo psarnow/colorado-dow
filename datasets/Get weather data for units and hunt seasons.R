@@ -3,9 +3,11 @@
 #' author: "Pierre Sarnow"
 #' ---
 #' 
+setwd("~/_code/colorado-dow/datasets")
 require(plyr)
 require(dplyr)
 require(lubridate)
+require(scales)
 # Historic weather data for hunt units
 # Reference some accessible APIs here: /datasets/investigate options to gather historic weather data.R
 
@@ -91,6 +93,9 @@ for (iunit in ununit) {
   weatherdata5$daily.precipType[is.na(weatherdata5$daily.precipType)] <- 0
   weatherdata5$daily.precipAccumulation[is.na(weatherdata5$daily.precipAccumulation)] <- 0
   
+  # Add new moonphase field, percent full
+  weatherdata5$daily.FullmoonPhase <- rescale(abs(weatherdata5$daily.moonPhase - 0.5), from = c(.5,0), to = c(0,1))
+
   save(weatherdata5,file="weatherdata5.RData")
 }
 

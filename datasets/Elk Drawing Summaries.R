@@ -188,6 +188,9 @@ for (iyear in years) {
   COElkDraw4 <- filter(COElkDraw4, Type=="R")
   COElkDraw4 <- select(COElkDraw4, -Type)
   
+  #Drop HuntCode
+  COElkDraw4 <- select(COElkDraw4, -HuntCode)
+  
   #Clean up field classes
   COElkDraw4$Orig_Quota <- as.numeric(COElkDraw4$Orig_Quota)
   COElkDraw4$Ttl_Chce_1 <- as.numeric(COElkDraw4$Ttl_Chce_1)
@@ -202,5 +205,13 @@ for (iyear in years) {
 #' Calculate Draw Success Rate
 COElkDrawAll$Draw_Success <- COElkDrawAll$Chcs_Drawn / COElkDrawAll$Ttl_Chce_1
 
+#' Spread rows based on draw Sex
+COElkDrawAll2 <- COElkDrawAll %>%
+  gather(label,value,Draw_Success,Ttl_Chce_1,Orig_Quota,Chcs_Drawn) %>%
+  unite(label1, Sex, label, sep = ".") %>% 
+  spread(label1, value) 
+  
+filter(COElkDrawAll2, Unit == "77" & Year == 2016)
+
 #' Peek at the dataframe
-head(COElkDrawAll)
+head(COElkDrawAll2)

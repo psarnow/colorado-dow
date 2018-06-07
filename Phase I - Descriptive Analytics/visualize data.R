@@ -108,7 +108,7 @@ ggplot(COElkRifleSuccess77, aes(Season,Hunters)) +
   scale_fill_manual(values = hcpalette) +
   prettytheme +
   ggtitle("Unit 77 Number of Rifle Hunters")
-#' The first season definately has less hunters, but it is also a shorter Season, so its not a true
+#' The fourth and first seasons definately have less hunters, but also a shorter Seasons, so its not a true
 #' measure of density (busy). Will need to populate the table with Season Duration somehow
 #' 
 #' **FUTURE** add Season Durations
@@ -125,7 +125,7 @@ ggplot(COElkRifleSuccess, aes(Year,Harvest_Effort)) +
   geom_bar(stat="identity") +
   prettytheme +
   ggtitle("Statewide Rifle Elk Hunting Effort Required")
-#' Not sure if this provides any important info towards my question. I do note that two years ago required an 
+#' Not sure if this provides any important info towards my question. I do note that 2016 required an 
 #' unusually amount of extra effort.
 #'
 #' Unit 77 by season for all years can tell me overall the differences in seasonal effort

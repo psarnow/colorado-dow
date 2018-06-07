@@ -66,7 +66,7 @@ for (iyear in years) {
   rifle3 <- grep(tableheadings[3], COElka)
   rifle4 <- grep(tableheadings[4], COElka)
   
-  rifleseasons <- c(rifle1,rifle2,rifle3,rifle4)
+  rifleseasons <- unique(c(rifle1,rifle2,rifle3,rifle4))
   COElkb <- COElka[rifleseasons]
   
   # the first page has the end of a previous table, remove it so we can have consistent columns
@@ -231,7 +231,6 @@ for (iyear in years) {
   COElkRifle <- rbind(seasonONE3,seasonTWO3,seasonTHREE3,seasonFOUR3)
   COElkRifle$Year <- as.character(iyear)
   COElkRifleAll <- rbind(COElkRifleAll,COElkRifle)
-
 }
 
 #' Clean up dataframe fields
