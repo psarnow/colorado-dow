@@ -172,6 +172,12 @@ ggplot(COElkWeather77year, aes(Success,daily.humidity)) +
   ggtitle("Unit 77 Elk Population vs Harvest")
 
 
+
+
+
+
+
+
 ggplot(COElkPopulationStatewide, aes(Year,Estimate,group=DAU,fill=DAU)) +
   geom_bar(stat="identity",position = 'dodge') +
   # geom_point() +
