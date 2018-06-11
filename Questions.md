@@ -7,6 +7,7 @@ author: "Pierre Sarnow"
 * Considering general Rifle hunting seasons (non muzzleloader)
 * No preference between hunting a Bull or a Cow elk
 * No differentiation between Resident and NonResident hunter status
+* Ignore preference points required in Draw Results, assume all applicants have the same amount of points
 
 # Full List of Questions
 ## Pre Draw January - March
@@ -15,6 +16,10 @@ author: "Pierre Sarnow"
 * Which season should I apply to hunt in?
 * Should I apply to hunt bull or cow?
 #### Secondary helper questions
+* What is the trend of the elk population (statewide, by unit)
+* What is the trend for number of hunters (statewide, by unit)
+* What is the trend for harvest (statewide, by unit)
+* What is the trend for success (statewide, by unit)
 * Which unit+season do I have the best chance for a successful draw (Cow)?
 * Which unit+season do I have the best chance of success for an over the counter tag (Bull)?
 * Which unit+season do I have the best chance of success?
@@ -25,8 +30,5 @@ author: "Pierre Sarnow"
 * What is the Elk to Hunter ratio for each unit+season?
 * Understand the affects of weather on success rates
 * Understand the affects of weather on harvest
-* What is the trend of the elk population (statewide, by unit)
-* What is the trend for number of hunters (statewide, by unit)
-* What is the trend for harvest (statewide, by unit)
-* What is the trend for success (statewide, by unit)
+
 * Do I have a better chance of success drawing and hunting Cow or Bull per unit+season

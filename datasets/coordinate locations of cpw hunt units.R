@@ -31,7 +31,7 @@ shapefile_centroids2$longitude <- shapefile_centroids2$centroids$V1
 shapefile_centroids2$latitude <- shapefile_centroids2$centroids$V2
 data_centroids <- select(shapefile_centroids2,Unit, group,longitude,latitude)
 data_centroids <- data_centroids[!duplicated(data_centroids$Unit),]
-data_centroids <- select(data_centroids, longitude, latitude, Unit)
+data_centroids <- select(data_centroids, longitude, latitude, group, Unit)
 data_centroids$Unit <- as.character(data_centroids$Unit)
 
 head(data_centroids)
