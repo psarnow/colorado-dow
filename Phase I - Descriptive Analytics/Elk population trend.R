@@ -107,10 +107,10 @@ library(ggmap)
 # library(ggalt)
 
 
-colorado_stamen_map <- qmap(location=c(lon=-105.4,lat=39.1438), zoom=7, source = "stamen",maptype = "toner")   
+colorado_stamen_map <- qmap(location=c(lon=-105.54,lat=39.1438), zoom=7, source = "stamen",maptype = "toner")   
 
 colorado_stamen_map +
-  geom_polygon(data = PopulationtoPlot, aes(long,lat,group=group,fill = Population),colour = "grey50", size = .2,alpha=.2) + #Unit boundaries
+  geom_polygon(data = PopulationtoPlot, aes(long,lat,group=group,fill = Population),colour = "grey50", size = .2,alpha=.5) + #Unit boundaries
   geom_text(data=data_centroids,aes(x=longitude,y=latitude,label = Unit),size=4) + #Unit labels
   scale_fill_distiller(palette = "Greens",direction = 1,na.value = 'grey') +
   xlab("") + 
@@ -119,6 +119,8 @@ colorado_stamen_map +
   theme(panel.grid.major= element_blank()) +
   theme(panel.grid.minor= element_blank()) +
   ggtitle("2016 Colorado Elk Population")
+
+
 ##############################################################################################################
 #' Would also be beneficial to rank each unit so I can reference later. In this case
 #' I might average the population of the last few years since they tend to move around
