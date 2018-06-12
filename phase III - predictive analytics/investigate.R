@@ -81,3 +81,50 @@ ggplot(Season1_77_Scaled, aes(Metric,value,label=Year,size=Success,color=Success
 #' Fields that might have an association with Success
 #' Humidity, MoonPhase, PrecipAccumulation, PrecipType, PrecipProbability,TempHigh,TempLow,windSpeed
 
+# Unit 77
+Draw77 <- filter(COElkDrawAll2, Unit == "77")
+Draw77Success <- summarise(group_by(Draw77,Year, Season),
+                           Draw_Success = mean(c(Cow.Draw_Success,Either.Draw_Success,Bull.Draw_Success),na.rm = T),
+                           Quota = sum(c(Cow.Orig_Quota,Either.Orig_Quota,Bull.Orig_Quota),na.rm = T))
+
+Draw77Success$Draw_Success[Draw77Success$Draw_Success > 1] <- 1
+
+ggplot(Draw77Success, aes(Year,Draw_Success,group=Season,fill=Season)) +
+  geom_bar(stat="identity",position='dodge') +
+  # geom_point() +
+  scale_y_continuous(labels = percent) +
+  scale_fill_manual(values = hcpalette) +
+  prettytheme +
+  ggtitle("Unit 77 Draw Success")
+
+
+ggplot(Draw77Success, aes(Year,Quota,group=Season,fill=Season)) +
+  geom_bar(stat="identity") +
+  # geom_point() +
+  # scale_y_continuous(labels = percent) +
+  scale_fill_manual(values = hcpalette) +
+  prettytheme +
+  ggtitle("Unit 77 Draw Quota")
+
+
+Harvest77 <- filter(COElkRifleAll, Unit == "77")
+
+ggplot(Harvest77, aes(Year,Harvest,group=Season,fill=Season)) +
+  geom_bar(stat="identity",position = 'dodge') +
+  # geom_point() +
+  # scale_y_continuous(labels = percent) +
+  scale_fill_manual(values = hcpalette) +
+  prettytheme +
+  ggtitle("Unit 77 Harvest")
+
+Population77 <- filter(COElkPopulationAll, Unit == "77")
+
+ggplot(Population77, aes(Year,Unit_Pop)) +
+  geom_bar(stat="identity",position = 'dodge') +
+  # geom_point() +
+  # scale_y_continuous(labels = percent) +
+  scale_fill_manual(values = hcpalette) +
+  prettytheme +
+  coord_cartesian(ylim = c(3250,4000)) +
+  ggtitle("Unit 77 Population")
+
