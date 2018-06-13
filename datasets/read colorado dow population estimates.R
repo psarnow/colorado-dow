@@ -29,15 +29,16 @@ years <- c(2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016)
 COElkPopulationAll <- NULL # Initialize
 for (iyear in years) {
   
-  if (iyear >= 2015) {
-    download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
-                        iyear,"ElkPopulationEstimates.pdf",sep=""),
-                  paste(iyear,"COElkPopulation",sep=""))
-  } else {
-    download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
-                        iyear,"ElkPopulationEstimate.pdf",sep=""),
-                  paste(iyear,"COElkPopulation",sep=""))
-  }
+  # RUN ONCE to download files
+  # if (iyear >= 2015) {
+  #   download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
+  #                       iyear,"ElkPopulationEstimates.pdf",sep=""),
+  #                 paste(iyear,"COElkPopulation",sep=""))
+  # } else {
+  #   download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
+  #                       iyear,"ElkPopulationEstimate.pdf",sep=""),
+  #                 paste(iyear,"COElkPopulation",sep=""))
+  # }
   
   # This function will directly export the raw text in a character vector with spaces to show 
   # the white space and \n to show the line breaks.

@@ -46,7 +46,11 @@ DARKSKY_API_KEY = "3fc59f55a5f39d140240f6df606c2c19"
 get_current_forecast(39.58672, -105.13492)
 
 ununitall <- unique(data_centroids$Unit) # all Units
-ununit <- ununitall[!ununitall %in% unique(weatherdata5$Unit)] # Units we don't have weather data for yet
+# ununit <- ununitall[!ununitall %in% unique(weatherdata5$Unit)] # Units we don't have weather data for yet
+#' Lets ignore the east side of the state initially as those units are not actually
+#' hunted in
+huntedunits <- unique(filter(COElkRifleAll, !is.na(Hunters) & Hunters > 0)$Unit)
+ununit <- huntedunits[!huntedunits %in% unique(weatherdata5$Unit)] # Units we don't have weather data for yet
 ununit <-sample(ununit,3,T)
 
 for (iunit in ununit) {
