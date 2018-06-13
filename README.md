@@ -23,6 +23,7 @@ Its also important to note that data modelers have a sense of what they are mode
 #### Step 2 -- Wrangle the data
 #### Step 3 -- Chart results
 * [Model and chart data to answer our initial questions](http://rpubs.com/psarnow/393161)
+Population http://rpubs.com/psarnow/396876
 
 ## Phase II -- Diagnostic Analytics (Why did it happen)
 Any relationship between Units and their results?
