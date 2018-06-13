@@ -19,11 +19,29 @@ Its also important to note that data modelers have a sense of what they are mode
 **Goal** I would like to hunt next year and would like to know which season will provide me the best chance of success for a certain Unit.  How did things go in past years?
 
 #### Step 1 -- Data Acquisition
+CPW provides a lot of info for hunters to sift through.  Let's start by accessing what they provide.
 * [Elk hunting statistics from CPW](http://rpubs.com/psarnow/393142)
-#### Step 2 -- Wrangle the data
+
+* [Hunt Draw summaries from CPW](http://rpubs.com/psarnow/394721)
+
+* [Herd population estimates from CPW](http://rpubs.com/psarnow/393560)
+
+* [Hunt season dates from CPW](http://rpubs.com/psarnow/393655)
+
+* [Coordinate locations of the CPW hunt units](http://rpubs.com/psarnow/393672)
+
+Additionally, as most hunters know, weather plays a large role in hunting success. Let's grab some historical data from Dark Sky using their API
+* [Weather from Dark Sky](http://rpubs.com/psarnow/393658)
+
+#### Step 2 -- Initial questions
+* [Where are the elk at in Colorado?](http://rpubs.com/psarnow/396876)
+
+* [Where are the hunters at in Colorado?](http://rpubs.com/psarnow/396897)
+
+
 #### Step 3 -- Chart results
 * [Model and chart data to answer our initial questions](http://rpubs.com/psarnow/393161)
-Population http://rpubs.com/psarnow/396876
+Population 
 
 ## Phase II -- Diagnostic Analytics (Why did it happen)
 Any relationship between Units and their results?
@@ -36,15 +54,9 @@ Are there other factors to consider?
 **Goal** What makes the first season in Unit 77 have the most hunter success? Why does it take less effort (hunting days) to be successful in the first season of Unit 77?
 
 #### Step 1 -- Data Acquisition
-* [Hunt Draw summaries from CPW](http://rpubs.com/psarnow/394721)
 
-* [Herd population estimates from CPW](http://rpubs.com/psarnow/393560)
 
-* [Hunt season dates from CPW](http://rpubs.com/psarnow/393655)
 
-* [Coordinate locations of the CPW hunt units](http://rpubs.com/psarnow/393672)
-
-* [Weather from Dark Sky](http://rpubs.com/psarnow/393658)
 
 #### Step 2 -- Wrangle the data
 
