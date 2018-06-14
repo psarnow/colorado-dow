@@ -110,3 +110,4 @@ for (iunit in ununit) {
 # Data progress
 print(paste("Progress",sprintf("%1.2f%%",100*n_distinct(weatherdata5$Unit)/length(ununitall))))
 head(weatherdata5)
+unique(weatherdata5$Unit)
