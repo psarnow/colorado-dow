@@ -38,12 +38,10 @@ Additionally, as most hunters know, weather plays a large role in hunting succes
 
 * [Where are the hunters at in Colorado?](http://rpubs.com/psarnow/396897)
 
-* [What units have higher Elk to Hunter ratios?](http://rpubs.com/psarnow/396916)
+* [Which units have higher Elk to Hunter ratios?](http://rpubs.com/psarnow/396916)
 
+* [Which units have higher Hunter Success Rates?](http://rpubs.com/psarnow/397169)
 
-#### Step 3 -- Chart results
-* [Model and chart data to answer our initial questions](http://rpubs.com/psarnow/393161)
-Population 
 
 ## Phase II -- Diagnostic Analytics (Why did it happen)
 Any relationship between Units and their results?
