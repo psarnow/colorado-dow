@@ -18,7 +18,7 @@ library(pdftools,quietly = T)
 library(stringr,quietly = T)
 
 # Identify the years that CPW will provide tables for in this pdf format
-years <- c(2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017)
+years <- c(2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018)
 
 #'  Loop through years
 COElkDrawAll <- NULL # Initialize
@@ -211,7 +211,5 @@ COElkDrawAll2 <- COElkDrawAll %>%
   unite(label1, Sex, label, sep = ".") %>% 
   spread(label1, value) 
   
-filter(COElkDrawAll2, Unit == "77" & Year == 2016)
-
 #' Peek at the dataframe
 head(COElkDrawAll2)
