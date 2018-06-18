@@ -110,24 +110,24 @@ ggplot(DrawSuccesstoPlot, aes(long, lat, group = group)) +
   theme(panel.grid.minor= element_blank()) +
   labs(title="2017 Colorado Hunter Draw Success", caption="source: cpw.state.co.us")
 
-#' ## Year to Year Hunter Success Trends
+#' ## Year to Year Draw Success Trends
 #' Lets look at the changes from year to year.
 #+ include=F
 dev.off()
 
-png(file="HunterSuccessMap%02d.png", width=1400, height=1000)
+png(file="DrawSuccessMap%02d.png", width=1400, height=1000)
 icounter <- 0
-for (imap in unique(COElkSuccess$Year)){
-  yearplot <- filter(COElkSuccess, Year == imap)
-  HunterSuccesstoPlot <- left_join(Unitboundaries2,yearplot, by=c("Unit"))
-  p1 <- ggplot(HunterSuccesstoPlot, aes(long, lat, group = group)) + 
-    geom_polygon(aes(fill = Success),colour = "grey50", size = .2) + #Unit boundaries
+for (imap in unique(DrawSuccess$Year)){
+  yearplot <- filter(DrawSuccess, Year == imap)
+  DrawSuccesstoPlot <- left_join(Unitboundaries2,yearplot, by=c("Unit"))
+  p1 <- ggplot(DrawSuccesstoPlot, aes(long, lat, group = group)) + 
+    geom_polygon(aes(fill = Draw_Success),colour = "grey50", size = .2) + #Unit boundaries
     geom_path(data = COroads,aes(x = long, y = lat, group = group), color="#3878C7",size=2) + #Roads
     geom_text(data=data_centroids,aes(x=longitude,y=latitude,label = Unit),size=5) + #Unit labels
-    scale_fill_distiller(palette = "RdPu",
+    scale_fill_distiller(palette = "YlOrBr",
                          direction = 1,
                          na.value = 'grey',
-                         limits = c(0,max(COElkSuccess$Success))) + #fix so each year chart has same color breaks
+                         limits = c(0,max(DrawSuccess$Draw_Success))) + #fix so each year chart has same color breaks
     xlab("") + 
     ylab("") +
     theme(panel.background = element_rect(fill='white')) +
@@ -135,7 +135,7 @@ for (imap in unique(COElkSuccess$Year)){
     theme(panel.grid.minor= element_blank()) +
     theme(plot.title=element_text(hjust = .5)) +
     theme(plot.subtitle=element_text(hjust = icounter/length(unique(COElkSuccess$Year)))) +
-    labs(title="Colorado Elk Hunter Success by Year", subtitle=imap, caption="source: cpw.state.co.us")
+    labs(title="Colorado Elk Draw Success by Year", subtitle=imap, caption="source: cpw.state.co.us")
   plot(p1)
   icounter <- icounter + 1
 }
@@ -143,35 +143,36 @@ for (imap in unique(COElkSuccess$Year)){
 dev.off()
 
 #' Convert the .png files to one .gif file using ImageMagick. 
-system("convert -delay 150 *.png HunterSuccessmap.gif")
+system("convert -delay 150 *.png DrawSuccessmap.gif")
 
 #' cleanup
 file.remove(list.files(pattern=".png"))
 
-#' ![Colorado Elk Hunter Success by Year](HunterSuccessmap.gif)
-#' There are pockets of units that are more successful than the rest of the state. See units
-#' 2 and 40. Especially in recent years.
+#' ![Colorado Elk Draw Success by Year](DrawSuccessmap.gif)
+#' Noticable difference in lower statewide draw success in recent years. The most successful
+#' units for hunting may have lower draw success (more hunters are applying for those).
 #' 
 #' ## Seasonal Hunter Success Trends
 #' Lets look at the changes for each season
-COElkSuccessSeason <- summarise(group_by(COElkRifleAll,Season,Unit),
-                                Success = mean(Success,na.rm = T)/100)
+#' 
+DrawSuccessSeason <- summarise(group_by(COElkDraw,Season,Unit),
+                               Draw_Success = mean(Draw_Success,na.rm = T))
 #+ include=F
 dev.off()
 
-png(file="HunterSuccessSeasonMap%02d.png", width=1400, height=1000)
+png(file="DrawSuccessSeasonMap%02d.png", width=1400, height=1000)
 icounter <- 0
-for (imap in unique(COElkSuccessSeason$Season)){
-  seasonplot <- filter(COElkSuccessSeason, Season == imap)
-  HunterSuccesstoPlot <- left_join(Unitboundaries2,seasonplot, by=c("Unit"))
-  p1 <- ggplot(HunterSuccesstoPlot, aes(long, lat, group = group)) + 
-    geom_polygon(aes(fill = Success),colour = "grey50", size = .2) + #Unit boundaries
+for (imap in unique(DrawSuccessSeason$Season)){
+  seasonplot <- filter(DrawSuccessSeason, Season == imap)
+  DrawSuccesstoPlot <- left_join(Unitboundaries2,seasonplot, by=c("Unit"))
+  p1 <- ggplot(DrawSuccesstoPlot, aes(long, lat, group = group)) + 
+    geom_polygon(aes(fill = Draw_Success),colour = "grey50", size = .2) + #Unit boundaries
     geom_path(data = COroads,aes(x = long, y = lat, group = group), color="#3878C7",size=2) + #Roads
     geom_text(data=data_centroids,aes(x=longitude,y=latitude,label = Unit),size=5) + #Unit labels
-    scale_fill_distiller(palette = "RdPu",
+    scale_fill_distiller(palette = "YlOrBr",
                          direction = 1,
                          na.value = 'grey',
-                         limits = c(0,max(COElkSuccessSeason$Success))) + #fix so each year chart has same color breaks
+                         limits = c(0,max(DrawSuccessSeason$Draw_Success))) + #fix so each year chart has same color breaks
     xlab("") + 
     ylab("") +
     theme(panel.background = element_rect(fill='white')) +
@@ -179,7 +180,7 @@ for (imap in unique(COElkSuccessSeason$Season)){
     theme(panel.grid.minor= element_blank()) +
     theme(plot.title=element_text(hjust = .5)) +
     theme(plot.subtitle=element_text(hjust = icounter/length(unique(COElkSuccessSeason$Season)))) +
-    labs(title="Colorado Elk Hunter Success by Season", subtitle=imap, caption="source: cpw.state.co.us")
+    labs(title="Colorado Elk Draw Success by Season", subtitle=imap, caption="source: cpw.state.co.us")
   plot(p1)
   icounter <- icounter + 1
 }
@@ -187,14 +188,12 @@ for (imap in unique(COElkSuccessSeason$Season)){
 dev.off()
 
 #' Convert the .png files to one .gif file using ImageMagick. 
-system("convert -delay 150 *.png HunterSuccessSeasonmap.gif")
+system("convert -delay 150 *.png DrawSuccessSeasonmap.gif")
 
 #' cleanup
 file.remove(list.files(pattern=".png"))
 
-#' ![Colorado Elk Hunter Success by Season](HunterSuccessSeasonmap.gif)
-#' For most of the state the higher successes in the first and fourth seasons are apparent.
-#' 
+#' ![Colorado Elk Draw Success by Season](DrawSuccessSeasonmap.gif)
 #' ## Rank Units by overall hunter success
 #' Would also be beneficial to rank each unit so I can reference later.
 #' I'll average the last few years since each year isn't consistent
