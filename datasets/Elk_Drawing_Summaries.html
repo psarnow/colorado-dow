@@ -120,7 +120,7 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">Download and Read PDF Draw Summaries from Colorado CPW</h1>
 <h4 class="author"><em>Pierre Sarnow</em></h4>
-<h4 class="date"><em>Tue Jun 5 13:06:16 2018</em></h4>
+<h4 class="date"><em>Tue Jun 19 07:08:06 2018</em></h4>
 
 </div>
 
@@ -143,7 +143,7 @@ library(pdftools,quietly = T)
 library(stringr,quietly = T)
 
 # Identify the years that CPW will provide tables for in this pdf format
-years &lt;- c(2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017)</code></pre>
+years &lt;- c(2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018)</code></pre>
 <p>Loop through years</p>
 <pre class="r"><code>COElkDrawAll &lt;- NULL # Initialize
 for (iyear in years) {
@@ -312,14 +312,120 @@ for (iyear in years) {
   COElkDraw4 &lt;- filter(COElkDraw4, Type==&quot;R&quot;)
   COElkDraw4 &lt;- select(COElkDraw4, -Type)
   
+  #Drop HuntCode
+  COElkDraw4 &lt;- select(COElkDraw4, -HuntCode)
+  
   #Clean up field classes
   COElkDraw4$Orig_Quota &lt;- as.numeric(COElkDraw4$Orig_Quota)
   COElkDraw4$Ttl_Chce_1 &lt;- as.numeric(COElkDraw4$Ttl_Chce_1)
   COElkDraw4$Chcs_Drawn &lt;- as.numeric(COElkDraw4$Chcs_Drawn)
   
+  # Split select units into multiple (hunt codes were spread across units)
+  # assume even spread. Only referencing the 2018 Big Game Brochure...
+  # TODO - read Big Game Brochures for actual unit spreads
+  # Units 77, 771, 78
+  if (!any(COElkDraw4$Unit == &quot;771&quot; | COElkDraw4$Unit == &quot;78&quot;)) {
+    UnitSpread &lt;- filter(COElkDraw4, Unit == &quot;77&quot;)
+    COElkDraw4 &lt;- filter(COElkDraw4, Unit != &quot;77&quot;)
+    UnitSpread$Orig_Quota &lt;- UnitSpread$Orig_Quota / 3
+    UnitSpread$Ttl_Chce_1 &lt;- UnitSpread$Ttl_Chce_1 / 3
+    UnitSpread$Chcs_Drawn &lt;- UnitSpread$Chcs_Drawn / 3
+    UnitSpread1 &lt;- UnitSpread
+    UnitSpread2 &lt;- UnitSpread
+    UnitSpread1$Unit &lt;- &quot;771&quot;
+    UnitSpread2$Unit &lt;- &quot;78&quot;
+    COElkDraw4 &lt;- bind_rows(COElkDraw4, UnitSpread,UnitSpread1,UnitSpread2)
+  }
+  
+  # Units 64, 65
+  if (!any(COElkDraw4$Unit == &quot;65&quot;)) {
+    UnitSpread &lt;- filter(COElkDraw4, Unit == &quot;64&quot;)
+    COElkDraw4 &lt;- filter(COElkDraw4, Unit != &quot;64&quot;)
+    UnitSpread$Orig_Quota &lt;- UnitSpread$Orig_Quota / 2
+    UnitSpread$Ttl_Chce_1 &lt;- UnitSpread$Ttl_Chce_1 / 2
+    UnitSpread$Chcs_Drawn &lt;- UnitSpread$Chcs_Drawn / 2
+    UnitSpread1 &lt;- UnitSpread
+    UnitSpread1$Unit &lt;- &quot;65&quot;
+    COElkDraw4 &lt;- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  }
+  
+  # Units 57, 58
+  if (!any(COElkDraw4$Unit == &quot;58&quot;)) {
+    UnitSpread &lt;- filter(COElkDraw4, Unit == &quot;57&quot;)
+    COElkDraw4 &lt;- filter(COElkDraw4, Unit != &quot;57&quot;)
+    UnitSpread$Orig_Quota &lt;- UnitSpread$Orig_Quota / 2
+    UnitSpread$Ttl_Chce_1 &lt;- UnitSpread$Ttl_Chce_1 / 2
+    UnitSpread$Chcs_Drawn &lt;- UnitSpread$Chcs_Drawn / 2
+    UnitSpread1 &lt;- UnitSpread
+    UnitSpread1$Unit &lt;- &quot;58&quot;
+    COElkDraw4 &lt;- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  }
+  
+  # Units 7, 8
+  if (!any(COElkDraw4$Unit == &quot;8&quot;)) {
+    UnitSpread &lt;- filter(COElkDraw4, Unit == &quot;7&quot;)
+    COElkDraw4 &lt;- filter(COElkDraw4, Unit != &quot;7&quot;)
+    UnitSpread$Orig_Quota &lt;- UnitSpread$Orig_Quota / 2
+    UnitSpread$Ttl_Chce_1 &lt;- UnitSpread$Ttl_Chce_1 / 2
+    UnitSpread$Chcs_Drawn &lt;- UnitSpread$Chcs_Drawn / 2
+    UnitSpread1 &lt;- UnitSpread
+    UnitSpread1$Unit &lt;- &quot;8&quot;
+    COElkDraw4 &lt;- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  }
+  
+  # Units 28, 37
+  if (!any(COElkDraw4$Unit == &quot;37&quot;)) {
+    UnitSpread &lt;- filter(COElkDraw4, Unit == &quot;28&quot;)
+    COElkDraw4 &lt;- filter(COElkDraw4, Unit != &quot;28&quot;)
+    UnitSpread$Orig_Quota &lt;- UnitSpread$Orig_Quota / 2
+    UnitSpread$Ttl_Chce_1 &lt;- UnitSpread$Ttl_Chce_1 / 2
+    UnitSpread$Chcs_Drawn &lt;- UnitSpread$Chcs_Drawn / 2
+    UnitSpread1 &lt;- UnitSpread
+    UnitSpread1$Unit &lt;- &quot;37&quot;
+    COElkDraw4 &lt;- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  }
+  
+  # Units 69, 84
+  if (!any(COElkDraw4$Unit == &quot;84&quot;)) {
+    UnitSpread &lt;- filter(COElkDraw4, Unit == &quot;69&quot;)
+    COElkDraw4 &lt;- filter(COElkDraw4, Unit != &quot;69&quot;)
+    UnitSpread$Orig_Quota &lt;- UnitSpread$Orig_Quota / 2
+    UnitSpread$Ttl_Chce_1 &lt;- UnitSpread$Ttl_Chce_1 / 2
+    UnitSpread$Chcs_Drawn &lt;- UnitSpread$Chcs_Drawn / 2
+    UnitSpread1 &lt;- UnitSpread
+    UnitSpread1$Unit &lt;- &quot;84&quot;
+    COElkDraw4 &lt;- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  }
+  
+  # Units 59, 581
+  if (!any(COElkDraw4$Unit == &quot;581&quot;)) {
+    UnitSpread &lt;- filter(COElkDraw4, Unit == &quot;59&quot;)
+    COElkDraw4 &lt;- filter(COElkDraw4, Unit != &quot;59&quot;)
+    UnitSpread$Orig_Quota &lt;- UnitSpread$Orig_Quota / 2
+    UnitSpread$Ttl_Chce_1 &lt;- UnitSpread$Ttl_Chce_1 / 2
+    UnitSpread$Chcs_Drawn &lt;- UnitSpread$Chcs_Drawn / 2
+    UnitSpread1 &lt;- UnitSpread
+    UnitSpread1$Unit &lt;- &quot;581&quot;
+    COElkDraw4 &lt;- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  }
+  
+  # Units 86, 691, 861
+  if (!any(COElkDraw4$Unit == &quot;691&quot; | COElkDraw4$Unit == &quot;861&quot;)) {
+    UnitSpread &lt;- filter(COElkDraw4, Unit == &quot;86&quot;)
+    COElkDraw4 &lt;- filter(COElkDraw4, Unit != &quot;86&quot;)
+    UnitSpread$Orig_Quota &lt;- UnitSpread$Orig_Quota / 3
+    UnitSpread$Ttl_Chce_1 &lt;- UnitSpread$Ttl_Chce_1 / 3
+    UnitSpread$Chcs_Drawn &lt;- UnitSpread$Chcs_Drawn / 3
+    UnitSpread1 &lt;- UnitSpread
+    UnitSpread2 &lt;- UnitSpread
+    UnitSpread1$Unit &lt;- &quot;691&quot;
+    UnitSpread2$Unit &lt;- &quot;861&quot;
+    COElkDraw4 &lt;- bind_rows(COElkDraw4, UnitSpread,UnitSpread1,UnitSpread2)
+  }
+  
   #Combine
   COElkDraw4$Year &lt;- as.character(iyear)
-  COElkDrawAll &lt;- rbind(COElkDrawAll,COElkDraw4)
+  COElkDrawAll &lt;- bind_rows(COElkDrawAll,COElkDraw4)
   
 }</code></pre>
 <pre><code>## Warning: Expected 26 pieces. Missing pieces filled with `NA` in 85 rows [1,
@@ -330,24 +436,45 @@ for (iyear in years) {
 
 ## Warning: Expected 26 pieces. Missing pieces filled with `NA` in 85 rows [1,
 ## 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...].</code></pre>
+<pre><code>## Warning: Expected 26 pieces. Missing pieces filled with `NA` in 81 rows [1,
+## 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...].</code></pre>
 <p>Calculate Draw Success Rate</p>
 <pre class="r"><code>COElkDrawAll$Draw_Success &lt;- COElkDrawAll$Chcs_Drawn / COElkDrawAll$Ttl_Chce_1</code></pre>
+<p>Spread rows based on draw Sex</p>
+<pre class="r"><code>COElkDrawAll2 &lt;- COElkDrawAll %&gt;%
+  gather(label,value,Draw_Success,Ttl_Chce_1,Orig_Quota,Chcs_Drawn) %&gt;%
+  unite(label1, Sex, label, sep = &quot;.&quot;) %&gt;% 
+  spread(label1, value) </code></pre>
 <p>Peek at the dataframe</p>
-<pre class="r"><code>head(COElkDrawAll)</code></pre>
-<pre><code>##   HuntCode Orig_Quota Ttl_Chce_1 Chcs_Drawn    Sex Unit Season Year
-## 1 EE003O1R       1075       2188       1075 Either    3      1 2006
-## 2 EE003O4R        300        533        300 Either    3      4 2006
-## 3 EE004O4R        150        235        150 Either    4      4 2006
-## 4 EE005O4R         10         33         10 Either    5      4 2006
-## 5 EE006O1R        100        168        100 Either    6      1 2006
-## 6 EE006O4R         80         83         80 Either    6      4 2006
-##   Draw_Success
-## 1    0.4913163
-## 2    0.5628518
-## 3    0.6382979
-## 4    0.3030303
-## 5    0.5952381
-## 6    0.9638554</code></pre>
+<pre class="r"><code>head(COElkDrawAll2)</code></pre>
+<pre><code>##   Unit Season Year Bull.Chcs_Drawn Bull.Draw_Success Bull.Orig_Quota
+## 1    1      1 2006              NA                NA              NA
+## 2    1      1 2007              NA                NA              NA
+## 3    1      1 2008              NA                NA              NA
+## 4    1      1 2009              NA                NA              NA
+## 5    1      1 2010              NA                NA              NA
+## 6    1      1 2011              NA                NA              NA
+##   Bull.Ttl_Chce_1 Cow.Chcs_Drawn Cow.Draw_Success Cow.Orig_Quota
+## 1              NA             15         3.000000             20
+## 2              NA             15         3.000000             15
+## 3              NA             15         1.250000             15
+## 4              NA             15         2.142857             15
+## 5              NA             15         7.500000             15
+## 6              NA             12         3.000000             15
+##   Cow.Ttl_Chce_1 Either.Chcs_Drawn Either.Draw_Success Either.Orig_Quota
+## 1              5                NA                  NA                NA
+## 2              5                NA                  NA                NA
+## 3             12                NA                  NA                NA
+## 4              7                NA                  NA                NA
+## 5              2                NA                  NA                NA
+## 6              4                NA                  NA                NA
+##   Either.Ttl_Chce_1
+## 1                NA
+## 2                NA
+## 3                NA
+## 4                NA
+## 5                NA
+## 6                NA</code></pre>
 </div>
 
 

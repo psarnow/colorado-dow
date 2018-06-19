@@ -200,92 +200,108 @@ for (iyear in years) {
   # assume even spread. Only referencing the 2018 Big Game Brochure...
   # TODO - read Big Game Brochures for actual unit spreads
   # Units 77, 771, 78
-  UnitSpread <- filter(COElkDraw4, Unit == "77")
-  COElkDraw4 <- filter(COElkDraw4, Unit != "77")
-  UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 3
-  UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 3
-  UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 3
-  UnitSpread1 <- UnitSpread
-  UnitSpread2 <- UnitSpread
-  UnitSpread1$Unit <- "771"
-  UnitSpread2$Unit <- "78"
-  COElkDraw4 <- rbind(COElkDraw4, UnitSpread,UnitSpread1,UnitSpread2)
+  if (!any(COElkDraw4$Unit == "771" | COElkDraw4$Unit == "78")) {
+    UnitSpread <- filter(COElkDraw4, Unit == "77")
+    COElkDraw4 <- filter(COElkDraw4, Unit != "77")
+    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 3
+    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 3
+    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 3
+    UnitSpread1 <- UnitSpread
+    UnitSpread2 <- UnitSpread
+    UnitSpread1$Unit <- "771"
+    UnitSpread2$Unit <- "78"
+    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1,UnitSpread2)
+  }
   
   # Units 64, 65
-  UnitSpread <- filter(COElkDraw4, Unit == "64")
-  COElkDraw4 <- filter(COElkDraw4, Unit != "64")
-  UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
-  UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
-  UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
-  UnitSpread1 <- UnitSpread
-  UnitSpread1$Unit <- "65"
-  COElkDraw4 <- rbind(COElkDraw4, UnitSpread,UnitSpread1)
+  if (!any(COElkDraw4$Unit == "65")) {
+    UnitSpread <- filter(COElkDraw4, Unit == "64")
+    COElkDraw4 <- filter(COElkDraw4, Unit != "64")
+    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
+    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
+    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
+    UnitSpread1 <- UnitSpread
+    UnitSpread1$Unit <- "65"
+    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  }
   
   # Units 57, 58
-  UnitSpread <- filter(COElkDraw4, Unit == "57")
-  COElkDraw4 <- filter(COElkDraw4, Unit != "57")
-  UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
-  UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
-  UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
-  UnitSpread1 <- UnitSpread
-  UnitSpread1$Unit <- "58"
-  COElkDraw4 <- rbind(COElkDraw4, UnitSpread,UnitSpread1)
+  if (!any(COElkDraw4$Unit == "58")) {
+    UnitSpread <- filter(COElkDraw4, Unit == "57")
+    COElkDraw4 <- filter(COElkDraw4, Unit != "57")
+    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
+    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
+    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
+    UnitSpread1 <- UnitSpread
+    UnitSpread1$Unit <- "58"
+    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  }
   
   # Units 7, 8
-  UnitSpread <- filter(COElkDraw4, Unit == "7")
-  COElkDraw4 <- filter(COElkDraw4, Unit != "7")
-  UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
-  UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
-  UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
-  UnitSpread1 <- UnitSpread
-  UnitSpread1$Unit <- "8"
-  COElkDraw4 <- rbind(COElkDraw4, UnitSpread,UnitSpread1)
+  if (!any(COElkDraw4$Unit == "8")) {
+    UnitSpread <- filter(COElkDraw4, Unit == "7")
+    COElkDraw4 <- filter(COElkDraw4, Unit != "7")
+    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
+    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
+    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
+    UnitSpread1 <- UnitSpread
+    UnitSpread1$Unit <- "8"
+    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  }
   
   # Units 28, 37
-  UnitSpread <- filter(COElkDraw4, Unit == "28")
-  COElkDraw4 <- filter(COElkDraw4, Unit != "28")
-  UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
-  UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
-  UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
-  UnitSpread1 <- UnitSpread
-  UnitSpread1$Unit <- "37"
-  COElkDraw4 <- rbind(COElkDraw4, UnitSpread,UnitSpread1)
+  if (!any(COElkDraw4$Unit == "37")) {
+    UnitSpread <- filter(COElkDraw4, Unit == "28")
+    COElkDraw4 <- filter(COElkDraw4, Unit != "28")
+    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
+    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
+    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
+    UnitSpread1 <- UnitSpread
+    UnitSpread1$Unit <- "37"
+    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  }
   
   # Units 69, 84
-  UnitSpread <- filter(COElkDraw4, Unit == "69")
-  COElkDraw4 <- filter(COElkDraw4, Unit != "69")
-  UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
-  UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
-  UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
-  UnitSpread1 <- UnitSpread
-  UnitSpread1$Unit <- "84"
-  COElkDraw4 <- rbind(COElkDraw4, UnitSpread,UnitSpread1)
+  if (!any(COElkDraw4$Unit == "84")) {
+    UnitSpread <- filter(COElkDraw4, Unit == "69")
+    COElkDraw4 <- filter(COElkDraw4, Unit != "69")
+    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
+    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
+    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
+    UnitSpread1 <- UnitSpread
+    UnitSpread1$Unit <- "84"
+    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  }
   
   # Units 59, 581
-  UnitSpread <- filter(COElkDraw4, Unit == "59")
-  COElkDraw4 <- filter(COElkDraw4, Unit != "59")
-  UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
-  UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
-  UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
-  UnitSpread1 <- UnitSpread
-  UnitSpread1$Unit <- "581"
-  COElkDraw4 <- rbind(COElkDraw4, UnitSpread,UnitSpread1)
+  if (!any(COElkDraw4$Unit == "581")) {
+    UnitSpread <- filter(COElkDraw4, Unit == "59")
+    COElkDraw4 <- filter(COElkDraw4, Unit != "59")
+    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
+    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
+    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
+    UnitSpread1 <- UnitSpread
+    UnitSpread1$Unit <- "581"
+    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  }
   
   # Units 86, 691, 861
-  UnitSpread <- filter(COElkDraw4, Unit == "86")
-  COElkDraw4 <- filter(COElkDraw4, Unit != "86")
-  UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 3
-  UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 3
-  UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 3
-  UnitSpread1 <- UnitSpread
-  UnitSpread2 <- UnitSpread
-  UnitSpread1$Unit <- "691"
-  UnitSpread2$Unit <- "861"
-  COElkDraw4 <- rbind(COElkDraw4, UnitSpread,UnitSpread1,UnitSpread2)
+  if (!any(COElkDraw4$Unit == "691" | COElkDraw4$Unit == "861")) {
+    UnitSpread <- filter(COElkDraw4, Unit == "86")
+    COElkDraw4 <- filter(COElkDraw4, Unit != "86")
+    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 3
+    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 3
+    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 3
+    UnitSpread1 <- UnitSpread
+    UnitSpread2 <- UnitSpread
+    UnitSpread1$Unit <- "691"
+    UnitSpread2$Unit <- "861"
+    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1,UnitSpread2)
+  }
   
   #Combine
   COElkDraw4$Year <- as.character(iyear)
-  COElkDrawAll <- rbind(COElkDrawAll,COElkDraw4)
+  COElkDrawAll <- bind_rows(COElkDrawAll,COElkDraw4)
   
 }
 

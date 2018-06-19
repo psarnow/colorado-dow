@@ -134,7 +134,7 @@ for (imap in unique(DrawSuccess$Year)){
     theme(panel.grid.major= element_blank()) +
     theme(panel.grid.minor= element_blank()) +
     theme(plot.title=element_text(hjust = .5)) +
-    theme(plot.subtitle=element_text(hjust = icounter/length(unique(COElkSuccess$Year)))) +
+    theme(plot.subtitle=element_text(hjust = icounter/length(unique(DrawSuccess$Year)))) +
     labs(title="Colorado Elk Draw Success by Year", subtitle=imap, caption="source: cpw.state.co.us")
   plot(p1)
   icounter <- icounter + 1
@@ -179,7 +179,7 @@ for (imap in unique(DrawSuccessSeason$Season)){
     theme(panel.grid.major= element_blank()) +
     theme(panel.grid.minor= element_blank()) +
     theme(plot.title=element_text(hjust = .5)) +
-    theme(plot.subtitle=element_text(hjust = icounter/length(unique(COElkSuccessSeason$Season)))) +
+    theme(plot.subtitle=element_text(hjust = icounter/length(unique(DrawSuccessSeason$Season)))) +
     labs(title="Colorado Elk Draw Success by Season", subtitle=imap, caption="source: cpw.state.co.us")
   plot(p1)
   icounter <- icounter + 1
@@ -194,65 +194,31 @@ system("convert -delay 150 *.png DrawSuccessSeasonmap.gif")
 file.remove(list.files(pattern=".png"))
 
 #' ![Colorado Elk Draw Success by Season](DrawSuccessSeasonmap.gif)
-#' ## Rank Units by overall hunter success
+#' ## Rank Units by overall draw success
 #' Would also be beneficial to rank each unit so I can reference later.
 #' I'll average the last few years since each year isn't consistent
-HunterSuccessRanklast3 <- filter(COElkSuccess, as.numeric(Year) >= 2015)
-HunterSuccessRanklast3 <- summarise(group_by(HunterSuccessRanklast3,Unit),
-                                    Success = mean(Success,na.rm = T))
-HunterSuccessRanklast3$SuccessRank = rank(-HunterSuccessRanklast3$Success)
+DrawSuccessRanklast3 <- filter(DrawSuccess, as.numeric(Year) >= 2016)
+DrawSuccessRanklast3 <- summarise(group_by(DrawSuccessRanklast3,Unit),
+                                  Draw_Success = mean(Draw_Success,na.rm = T))
+DrawSuccessRanklast3$SuccessRank = rank(-DrawSuccessRanklast3$Draw_Success)
 
-HunterSuccessRanklast3 <- filter(HunterSuccessRanklast3, SuccessRank <= 50) # top 50 units
+DrawSuccessRanklast3 <- filter(DrawSuccessRanklast3, SuccessRank <= 50) # top 50 units
 #' In order for the chart to retain the order of the rows, the X axis variable (i.e. the categories) has to be converted into a factor.
-HunterSuccessRanklast3 <- HunterSuccessRanklast3[order(-HunterSuccessRanklast3$Success), ]  # sort
-HunterSuccessRanklast3$Unit <- factor(HunterSuccessRanklast3$Unit, levels = HunterSuccessRanklast3$Unit)  # to retain the order in plot.
+DrawSuccessRanklast3 <- DrawSuccessRanklast3[order(-DrawSuccessRanklast3$Draw_Success), ]  # sort
+DrawSuccessRanklast3$Unit <- factor(DrawSuccessRanklast3$Unit, levels = DrawSuccessRanklast3$Unit)  # to retain the order in plot.
 
 #' Lollipop Chart
-ggplot(HunterSuccessRanklast3, aes(x=Unit, y=Success)) + 
+ggplot(DrawSuccessRanklast3, aes(x=Unit, y=Draw_Success)) + 
   geom_point(size=3) + 
   geom_segment(aes(x=Unit, 
                    xend=Unit, 
                    y=0, 
-                   yend=Success)) +
+                   yend=Draw_Success)) +
   scale_y_continuous(labels = percent) +
-  labs(title="Average Hunter Success 2015-2017\nTop 50 Units", subtitle="Success by Unit", caption="source: cpw.state.co.us")
-#' There are a handful of units that have much better success than the rest of  the state.
+  labs(title="Average Draw Success 2016-2018\nTop 50 Units", subtitle="Success by Unit", caption="source: cpw.state.co.us")
+#'
 #' 
-#' ## Rank Units with Seasons by overall hunter success
-HunterSuccessSeasonRanklast3 <- filter(COElkRifleAll, as.numeric(Year) >= 2015)
-HunterSuccessSeasonRanklast3$Season[HunterSuccessSeasonRanklast3$Season == "1"] <- "1st"
-HunterSuccessSeasonRanklast3$Season[HunterSuccessSeasonRanklast3$Season == "2"] <- "2nd"
-HunterSuccessSeasonRanklast3$Season[HunterSuccessSeasonRanklast3$Season == "3"] <- "3rd"
-HunterSuccessSeasonRanklast3$Season[HunterSuccessSeasonRanklast3$Season == "4"] <- "4th"
-
-HunterSuccessSeasonRanklast3$Unit_Season <- paste(HunterSuccessSeasonRanklast3$Unit,HunterSuccessSeasonRanklast3$Season,sep="\n")
-HunterSuccessSeasonRanklast3 <- summarise(group_by(HunterSuccessSeasonRanklast3,Unit_Season),
-                                          Success = mean(Success,na.rm = T)/100)
-
-HunterSuccessSeasonRanklast3$SuccessRank = rank(-HunterSuccessSeasonRanklast3$Success)
-
-HunterSuccessSeasonRanklast3 <- filter(HunterSuccessSeasonRanklast3, SuccessRank <= 50) # top 50 unit seasons
-#' In order for the chart to retain the order of the rows, the X axis variable (i.e. the categories) has to be converted into a factor.
-HunterSuccessSeasonRanklast3 <- HunterSuccessSeasonRanklast3[order(-HunterSuccessSeasonRanklast3$Success), ]  # sort
-HunterSuccessSeasonRanklast3$Unit_Season <- factor(HunterSuccessSeasonRanklast3$Unit_Season, levels = HunterSuccessSeasonRanklast3$Unit_Season)  # to retain the order in plot.
-
-#' Lollipop Chart
-ggplot(HunterSuccessSeasonRanklast3, aes(x=Unit_Season, y=Success)) + 
-  geom_point(size=3) + 
-  geom_segment(aes(x=Unit_Season, 
-                   xend=Unit_Season, 
-                   y=0, 
-                   yend=Success)) +
-  scale_y_continuous(labels = percent) +
-  labs(title="Average Hunter Success 2015-2017\nTop 50 Unit Seasons", subtitle="Success by Unit and Season", caption="source: cpw.state.co.us")
 
 
 #' ## Conclusion
-#' First and Fourth seasons have the best success overall.  There are a handful of units that have much better
-#' recent success rates than the rest of the state, and for the top few it doesn't even seem season dependent.
-#' I'd like to look at what it takes to get a license to hunt in those units. I can do that by reviewing past
-#' draw results.
 #' 
-#' Look at draw results for all seasons of units 2, 40, 61, 9, 201, 20, 10. What is the likelihood of acquiring
-#' a license for a Bull and Cow in each of their seasons? Is there a unit, season, or sex that has a better likelihood
-#' of license success?
