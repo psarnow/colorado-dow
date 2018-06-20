@@ -11,6 +11,8 @@
 #' the hunter types (Resident, nonResident, Youth). Hunters apply using hunt codes in the Spring,
 #' and CPW posts the results of the Draw in early summer for fall hunts.
 #'
+#'TODO
+#'Look at cropping the pages into the places we want to read the data
 setwd("~/_code/colorado-dow/datasets")
 library(dplyr,quietly = T)
 library(tidyr,quietly = T)
