@@ -42,6 +42,7 @@ Additionally, as most hunters know, weather plays a large role in hunting succes
 
 * [Which units have higher Hunter Success Rates?](http://rpubs.com/psarnow/397169)
 
+* [Which units have higher License Draw Success Rates?](http://rpubs.com/psarnow/398440)
 
 ## Phase II -- Diagnostic Analytics (Why did it happen)
 Any relationship between Units and their results?
