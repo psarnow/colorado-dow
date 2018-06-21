@@ -221,4 +221,5 @@ ggplot(DrawSuccessRanklast3, aes(x=Unit, y=Draw_Success)) +
 
 
 #' ## Conclusion
-#' 
+#' How about breakdowns for each sex? Bull, Cow, Either. What about seeing 
+#' these for Hunters, Success, Draw, etc
