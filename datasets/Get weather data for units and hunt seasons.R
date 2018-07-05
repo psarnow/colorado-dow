@@ -33,7 +33,6 @@ require(darksky)
 #' API key
 #' The API wrapper functions in this package all rely on a Dark Sky API key residing in the environment variable DARKSKY_API_KEY. 
 #' The easiest way to accomplish this is to set it in the '.Renviron' file in your home directory.
-DARKSKY_API_KEY = "3fc59f55a5f39d140240f6df606c2c19"
 
 #' Will need to build this incrementally and save it off as we can only poll 1000 times a day
 #' 185 units, 9 years, 4 seasons, ~7days per season or 46,620 calls
