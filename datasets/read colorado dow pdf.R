@@ -249,6 +249,10 @@ COElkRifleAll$Days <- as.numeric(gsub(",", "", COElkRifleAll$Days))
 
 COElkRifleAll$Success <- as.numeric(levels(COElkRifleAll$Success))[as.integer(COElkRifleAll$Success)]
 COElkRifleAll$Harvest <- as.numeric(levels(COElkRifleAll$Harvest))[as.integer(COElkRifleAll$Harvest)]
+COElkRifleAll$Bulls <- as.numeric(levels(COElkRifleAll$Bulls))[as.integer(COElkRifleAll$Bulls)]
+COElkRifleAll$Cows <- as.numeric(levels(COElkRifleAll$Cows))[as.integer(COElkRifleAll$Cows)]
+COElkRifleAll$Calves <- as.numeric(levels(COElkRifleAll$Calves))[as.integer(COElkRifleAll$Calves)]
+
 COElkRifleAll$Season <- as.character(COElkRifleAll$Season)
 COElkRifleAll$Unit <- as.character(COElkRifleAll$Unit)
 
