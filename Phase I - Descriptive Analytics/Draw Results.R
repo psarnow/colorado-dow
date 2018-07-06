@@ -23,8 +23,8 @@ library(ggplot2, quietly = T)
 library(scales, quietly = T)
 #' Set our preferred charting theme
 theme_set(theme_minimal())
-#' Run script to get hunter data
-#+ source hunter data, message=F, warning=F
+#' Run script to get draw data
+#+ source draw data, message=F, warning=F
 source('~/_code/colorado-dow/datasets/Elk Drawing Summaries.R', echo=F)
 #' Table of the data
 COElkDrawAll2

@@ -35,6 +35,12 @@ COElkDrawAll2
 COHunterbyElkType <- left_join(COElkRifleAll,COElkDrawAll2)
 
 #' some cleanup
+#' Draws are typically for only one sex, so we can use the total hunters to calculate how many hunters for the other sex
+# Possible draw for 
+## Bull
+## Cow/Calf
+## Either
+## Neither ??, not sure if this is possible
 COHunterbyElkType$Success.Bull <- COHunterbyElkType$Bulls / COHunterbyElkType$Bull.Chcs_Drawn
 COHunterbyElkType$Success.CowCalf <- (COHunterbyElkType$Cows + COHunterbyElkType$Calves) / COHunterbyElkType$Bull.Chcs_Drawn
 
