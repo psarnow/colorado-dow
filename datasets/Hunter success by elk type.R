@@ -32,7 +32,7 @@ source('~/_code/colorado-dow/datasets/Elk Drawing Summaries.R', echo=F)
 COElkDrawAll2
 
 #' join together
-COHunterbyElkType <- left_join(COElkRifleAll,COElkDrawAll2)
+COHunterbyElkType <- left_join(COElkRifleAll,COElkDrawAll)
 
 #' some cleanup
 #' Draws are typically for only one sex, so we can use the total hunters to calculate how many hunters for the other sex
@@ -41,6 +41,11 @@ COHunterbyElkType <- left_join(COElkRifleAll,COElkDrawAll2)
 ## Cow/Calf
 ## Either
 ## Neither ??, not sure if this is possible
+
+#' Just realized that the Harvest Data has tables with the breakdown...
+#' Unit, Antlered Harvest, Antlered Hunters, Antlered % Success, Antlerless Harvest, Antlerless Hunters, Antlerless % Success, Season, Year
+#' So I can modify the Harvest pdf reader to look at these tables.
+
 COHunterbyElkType$Success.Bull <- COHunterbyElkType$Bulls / COHunterbyElkType$Bull.Chcs_Drawn
 COHunterbyElkType$Success.CowCalf <- (COHunterbyElkType$Cows + COHunterbyElkType$Calves) / COHunterbyElkType$Bull.Chcs_Drawn
 

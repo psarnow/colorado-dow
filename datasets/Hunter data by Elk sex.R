@@ -23,7 +23,7 @@ library(stringr,quietly = T)
 years <- c(2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017)
 
 #'  Loop through years
-COElkRifleBreakdownAll <- NULL # Initialize
+COElkSexRifleBreakdownAll <- NULL # Initialize
 for (iyear in years) {
   
   # RUN ONCE to download
@@ -39,15 +39,15 @@ for (iyear in years) {
   
   # This function will directly export the raw text in a character vector with spaces to show 
   # the white space and \n to show the line breaks.
-  COElk <- pdf_text(paste(iyear,"COElkHarvest",sep=""))
+  COElkSex <- pdf_text(paste(iyear,"COElkHarvest",sep=""))
   
   # Having a full page in one element of a vector is not the most practical. Using strsplit 
   # will help separate lines from each other
-  COElka <- strsplit(COElk, "\n")
+  COElkSexa <- strsplit(COElkSex, "\n")
   
   # years starting in 2014 have a cover page or table of contents
   if (iyear >= 2014) {
-    COElka <- COElka[-1] # remove cover page (map, or table of contents)
+    COElkSexa <- COElkSexa[-1] # remove cover page (map, or table of contents)
   }
   
   # The document holds more information than we are after.
@@ -61,24 +61,24 @@ for (iyear in years) {
   # info we want and info we want to ignore
   
   # Identify pages with the table headings we identified
-  rifle1 <- grep(tableheadings[1], COElka)
-  rifle2 <- grep(tableheadings[2], COElka)
-  rifle3 <- grep(tableheadings[3], COElka)
-  rifle4 <- grep(tableheadings[4], COElka)
+  rifle1 <- grep(tableheadings[1], COElkSexa)
+  rifle2 <- grep(tableheadings[2], COElkSexa)
+  rifle3 <- grep(tableheadings[3], COElkSexa)
+  rifle4 <- grep(tableheadings[4], COElkSexa)
   
   rifleseasons <- unique(c(rifle1,rifle2,rifle3,rifle4))
-  COElkb <- COElka[rifleseasons]
+  COElkSexb <- COElkSexa[rifleseasons]
   
   # the first page has the end of a previous table, remove it so we can have consistent columns
-  firsttable <- COElkb[[1]]
+  firsttable <- COElkSexb[[1]]
   # which row has the heading of our table?
   firsttablestart <- grep(tableheadings[1], firsttable)
   # drop all rows before that table
   firstpage <- firsttable[-(1:firsttablestart-1)]
   
   # the last page might have the beginning of a new table, remove it so we can have consistent columns
-  lasttablepage <- length(COElkb) # what it the last page?
-  lasttable <- COElkb[[lasttablepage]]
+  lasttablepage <- length(COElkSexb) # what it the last page?
+  lasttable <- COElkSexb[[lasttablepage]]
   # which rows have table headings? they all start with 'iyear Elk Harvest'
   lasttableend <- grep(paste(iyear,"Elk Harvest"), lasttable)
   lasttableend <- max(lasttableend) # the second entry is the start of the table to ignore
@@ -88,19 +88,19 @@ for (iyear in years) {
   } else {lastpage <- lasttable}
   
   # replace updated first and last pages
-  COElkc <- COElkb
-  COElkc[[1]] <- firstpage
-  COElkc[[lasttablepage]] <- lastpage
+  COElkSexc <- COElkSexb
+  COElkSexc[[1]] <- firstpage
+  COElkSexc[[lasttablepage]] <- lastpage
   
   # unlist page elements
-  COElkd <- unlist(COElkc)
+  COElkSexd <- unlist(COElkSexc)
   
   ######## SEASON ONE ######## (could make a season loop as well)
   # identify season 1 data
-  seasonONEstart <- grep(tableheadings[1], COElkd)[1]
-  seasonONEend <- grep(tableheadings[2], COElkd)[1]
-  # seasonONE <- COElkd[((seasonONEstart+1):(seasonONEend-1))]
-  seasonONE <- COElkd[((seasonONEstart):(seasonONEend-1))]
+  seasonONEstart <- grep(tableheadings[1], COElkSexd)[1]
+  seasonONEend <- grep(tableheadings[2], COElkSexd)[1]
+  # seasonONE <- COElkSexd[((seasonONEstart+1):(seasonONEend-1))]
+  seasonONE <- COElkSexd[((seasonONEstart):(seasonONEend-1))]
   
   # remove rows with the table headers
   removeheaderrows <- grep(paste(iyear,"Elk Harvest"), seasonONE)
@@ -126,10 +126,10 @@ for (iyear in years) {
   
   ######## SEASON TWO ######## 
   # identify season 2 data
-  seasonTWOstart <- grep(tableheadings[2], COElkd)[1]
-  seasonTWOend <- grep(tableheadings[3], COElkd)[1]
-  # seasonTWO <- COElkd[((seasonTWOstart+1):(seasonTWOend-1))]
-  seasonTWO <- COElkd[((seasonTWOstart):(seasonTWOend-1))]
+  seasonTWOstart <- grep(tableheadings[2], COElkSexd)[1]
+  seasonTWOend <- grep(tableheadings[3], COElkSexd)[1]
+  # seasonTWO <- COElkSexd[((seasonTWOstart+1):(seasonTWOend-1))]
+  seasonTWO <- COElkSexd[((seasonTWOstart):(seasonTWOend-1))]
   
   # remove rows with the table headers
   removeheaderrows <- grep(" Elk Harvest", seasonTWO)
@@ -155,10 +155,10 @@ for (iyear in years) {
   
   ######## SEASON THREE ######## 
   # identify season 3 data
-  seasonTHREEstart <- grep(tableheadings[3], COElkd)[1]
-  seasonTHREEend <- grep(tableheadings[4], COElkd)[1]
-  # seasonTHREE <- COElkd[((seasonTHREEstart+1):(seasonTHREEend-1))]
-  seasonTHREE <- COElkd[((seasonTHREEstart):(seasonTHREEend-1))]
+  seasonTHREEstart <- grep(tableheadings[3], COElkSexd)[1]
+  seasonTHREEend <- grep(tableheadings[4], COElkSexd)[1]
+  # seasonTHREE <- COElkSexd[((seasonTHREEstart+1):(seasonTHREEend-1))]
+  seasonTHREE <- COElkSexd[((seasonTHREEstart):(seasonTHREEend-1))]
   
   # remove rows with the table headers
   removeheaderrows <- grep(" Elk Harvest", seasonTHREE)
@@ -185,9 +185,9 @@ for (iyear in years) {
   
   ######## SEASON FOUR ######## 
   # identify season 4 data
-  seasonFOURstart <- grep(tableheadings[4], COElkd)[1]
-  # seasonFOUR <- COElkd[((seasonFOURstart+1):(length(COElkd)))] # to the end
-  seasonFOUR <- COElkd[((seasonFOURstart):(length(COElkd)))] # to the end
+  seasonFOURstart <- grep(tableheadings[4], COElkSexd)[1]
+  # seasonFOUR <- COElkSexd[((seasonFOURstart+1):(length(COElkSexd)))] # to the end
+  seasonFOUR <- COElkSexd[((seasonFOURstart):(length(COElkSexd)))] # to the end
   
   # remove rows with the table headers
   removeheaderrows <- grep(" Elk Harvest", seasonFOUR)
@@ -212,9 +212,9 @@ for (iyear in years) {
   seasonFOUR3$Season <- 4
   
   #Combine
-  COElkRifleBreakdown <- rbind(seasonONE3,seasonTWO3,seasonTHREE3,seasonFOUR3)
-  COElkRifleBreakdown$Year <- as.character(iyear)
-  COElkRifleBreakdownAll <- rbind(COElkRifleBreakdownAll,COElkRifleBreakdown)
+  COElkSexRifleBreakdown <- rbind(seasonONE3,seasonTWO3,seasonTHREE3,seasonFOUR3)
+  COElkSexRifleBreakdown$Year <- as.character(iyear)
+  COElkSexRifleBreakdownAll <- rbind(COElkSexRifleBreakdownAll,COElkSexRifleBreakdown)
 }
 
 #' Clean up dataframe fields
@@ -230,15 +230,24 @@ for (iyear in years) {
 
 # TODO make the gsub search each column
 
-COElkRifleBreakdownAll$Antlered.Harvest <- as.numeric(levels(COElkRifleBreakdownAll$Antlered.Harvest))[as.integer(COElkRifleBreakdownAll$Antlered.Harvest)]
-COElkRifleBreakdownAll$Antlered.Hunters <- as.numeric(levels(COElkRifleBreakdownAll$Antlered.Hunters))[as.integer(COElkRifleBreakdownAll$Antlered.Hunters)]
-COElkRifleBreakdownAll$Antlered.Success <- as.numeric(levels(COElkRifleBreakdownAll$Antlered.Success))[as.integer(COElkRifleBreakdownAll$Antlered.Success)]
-COElkRifleBreakdownAll$Antlerless.Harvest <- as.numeric(levels(COElkRifleBreakdownAll$Antlerless.Harvest))[as.integer(COElkRifleBreakdownAll$Antlerless.Harvest)]
-COElkRifleBreakdownAll$Antlerless.Hunters <- as.numeric(levels(COElkRifleBreakdownAll$Antlerless.Hunters))[as.integer(COElkRifleBreakdownAll$Antlerless.Hunters)]
-COElkRifleBreakdownAll$Antlerless.Success <- as.numeric(levels(COElkRifleBreakdownAll$Antlerless.Success))[as.integer(COElkRifleBreakdownAll$Antlerless.Success)]
+COElkSexRifleBreakdownAll$Antlered.Harvest <- as.numeric(levels(COElkSexRifleBreakdownAll$Antlered.Harvest))[as.integer(COElkSexRifleBreakdownAll$Antlered.Harvest)]
+COElkSexRifleBreakdownAll$Antlered.Hunters <- as.numeric(levels(COElkSexRifleBreakdownAll$Antlered.Hunters))[as.integer(COElkSexRifleBreakdownAll$Antlered.Hunters)]
+COElkSexRifleBreakdownAll$Antlered.Success <- as.numeric(levels(COElkSexRifleBreakdownAll$Antlered.Success))[as.integer(COElkSexRifleBreakdownAll$Antlered.Success)]
+COElkSexRifleBreakdownAll$Antlerless.Harvest <- as.numeric(levels(COElkSexRifleBreakdownAll$Antlerless.Harvest))[as.integer(COElkSexRifleBreakdownAll$Antlerless.Harvest)]
+COElkSexRifleBreakdownAll$Antlerless.Hunters <- as.numeric(levels(COElkSexRifleBreakdownAll$Antlerless.Hunters))[as.integer(COElkSexRifleBreakdownAll$Antlerless.Hunters)]
+COElkSexRifleBreakdownAll$Antlerless.Success <- as.numeric(levels(COElkSexRifleBreakdownAll$Antlerless.Success))[as.integer(COElkSexRifleBreakdownAll$Antlerless.Success)]
 
-COElkRifleBreakdownAll$Season <- as.character(COElkRifleBreakdownAll$Season)
-COElkRifleBreakdownAll$Unit <- as.character(COElkRifleBreakdownAll$Unit)
+COElkSexRifleBreakdownAll$Season <- as.character(COElkSexRifleBreakdownAll$Season)
+COElkSexRifleBreakdownAll$Unit <- as.character(COElkSexRifleBreakdownAll$Unit)
 
-#' Peek at the dataframe
-head(COElkRifleBreakdownAll)
+# Spread on Unit, Season, Year so we can create more fields where data was missing.
+# each year and unit should have 4 seasons
+# each season should have antlered, and antlerless results
+#' Populate missing data with complete
+#' The tables only included groups with data, we will want to fill in these blanks.
+#' For example, some units do not have a season 1, we will want to fill those with NAs.
+
+COElkSexRifleBreakdownAll <- COElkSexRifleBreakdownAll %>% complete(Unit, nesting(Year,Season))
+
+#' Peek at the data
+head(COElkSexRifleBreakdownAll)

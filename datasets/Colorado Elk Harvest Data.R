@@ -1,5 +1,5 @@
 #' ---
-#' title: "Download and Read PDF Hunt Tables from Colorado CPW"
+#' title: "Download and Read PDF Harvest Tables from Colorado CPW"
 #' author: "Pierre Sarnow"
 #' ---
 
@@ -10,8 +10,12 @@
 #' In the case of the project we are solely interested in Elk Rifle Hunting on public
 #' land.
 #' The tables are organized by hunting seasons (First-Fourth), as well as by hunting regions (Units)
-#' The hunting regions vary very slightly from year to year but for the most part have
+#' The hunting units vary very slightly from year to year but for the most part have
 #' been consistent for many years.
+#' 
+#' There are two tables that I will use.
+#'* 'Limited' Seasons, where a draw was required to obtain a license
+#'* and the Percent Success tables that breakout number of hunters for Antlered and Antlerless
 #'
 setwd("~/_code/colorado-dow/datasets")
 
@@ -25,7 +29,7 @@ years <- c(2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017)
 #'  Loop through years
 COElkRifleAll <- NULL # Initialize
 for (iyear in years) {
-  
+  # First use the Percent Success tables for both Bull and Cows
   # RUN ONCE to download
   # if (iyear >= 2014) {
   #   download.file(paste("http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/",
@@ -39,33 +43,205 @@ for (iyear in years) {
   
   # This function will directly export the raw text in a character vector with spaces to show 
   # the white space and \n to show the line breaks.
-  COElk <- pdf_text(paste(iyear,"COElkHarvest",sep=""))
+  COElkEitherSex <- pdf_text(paste(iyear,"COElkHarvest",sep=""))
   
   # Having a full page in one element of a vector is not the most practical. Using strsplit 
   # will help separate lines from each other
-  COElka <- strsplit(COElk, "\n")
+  COElkEitherSexa <- strsplit(COElkEitherSex, "\n")
   
   # years starting in 2014 have a cover page or table of contents
   if (iyear >= 2014) {
-    COElka <- COElka[-1] # remove cover page (map, or table of contents)
+    COElkEitherSexa <- COElkEitherSexa[-1] # remove cover page (map, or table of contents)
   }
   
   # The document holds more information than we are after.
   # In our case we are looking for 
-  tableheadings <- c(paste(iyear,"Elk Harvest, Hunters and Recreation Days for First Rifle Seasons"),
-                     paste(iyear,"Elk Harvest, Hunters and Recreation Days for Second Rifle Seasons"),
-                     paste(iyear,"Elk Harvest, Hunters and Recreation Days for Third Rifle Seasons"),
-                     paste(iyear,"Elk Harvest, Hunters and Recreation Days for Fourth Rifle Seasons"))
+  tableheadings <- c(paste(iyear,"Elk Harvest, Hunters and Percent Success for First Rifle Seasons"),
+                     paste(iyear,"Elk Harvest, Hunters and Percent Success for Second Rifle Seasons"),
+                     paste(iyear,"Elk Harvest, Hunters and Percent Success for Third Rifle Seasons"),
+                     paste(iyear,"Elk Harvest, Hunters and Percent Success for Fourth Rifle Seasons"))
   
   # Notice that the tables run across pages, there are some pages that will have
   # info we want and info we want to ignore
   
   # Identify pages with the table headings we identified
-  rifle1 <- grep(tableheadings[1], COElka)
-  rifle2 <- grep(tableheadings[2], COElka)
-  rifle3 <- grep(tableheadings[3], COElka)
-  rifle4 <- grep(tableheadings[4], COElka)
+  rifle1 <- grep(tableheadings[1], COElkEitherSexa)
+  rifle2 <- grep(tableheadings[2], COElkEitherSexa)
+  rifle3 <- grep(tableheadings[3], COElkEitherSexa)
+  rifle4 <- grep(tableheadings[4], COElkEitherSexa)
   
+  rifleseasons <- unique(c(rifle1,rifle2,rifle3,rifle4))
+  COElkEitherSexb <- COElkEitherSexa[rifleseasons]
+  
+  # the first page has the end of a previous table, remove it so we can have consistent columns
+  firsttable <- COElkEitherSexb[[1]]
+  # which row has the heading of our table?
+  firsttablestart <- grep(tableheadings[1], firsttable)
+  # drop all rows before that table
+  firstpage <- firsttable[-(1:firsttablestart-1)]
+  
+  # the last page might have the beginning of a new table, remove it so we can have consistent columns
+  lasttablepage <- length(COElkEitherSexb) # what it the last page?
+  lasttable <- COElkEitherSexb[[lasttablepage]]
+  # which rows have table headings? they all start with 'iyear Elk Harvest'
+  lasttableend <- grep(paste(iyear,"Elk Harvest"), lasttable)
+  lasttableend <- max(lasttableend) # the second entry is the start of the table to ignore
+  if (lasttableend >1) {
+    # drop all rows after our table
+    lastpage <- lasttable[-(lasttableend:length(lasttable))]
+  } else {lastpage <- lasttable}
+  
+  # replace updated first and last pages
+  COElkEitherSexc <- COElkEitherSexb
+  COElkEitherSexc[[1]] <- firstpage
+  COElkEitherSexc[[lasttablepage]] <- lastpage
+  
+  # unlist page elements
+  COElkEitherSexd <- unlist(COElkEitherSexc)
+  
+  ######## SEASON ONE ######## (could make a season loop as well)
+  # identify season 1 data
+  seasonONEstart <- grep(tableheadings[1], COElkEitherSexd)[1]
+  seasonONEend <- grep(tableheadings[2], COElkEitherSexd)[1]
+  # seasonONE <- COElkEitherSexd[((seasonONEstart+1):(seasonONEend-1))]
+  seasonONE <- COElkEitherSexd[((seasonONEstart):(seasonONEend-1))]
+  
+  # remove rows with the table headers
+  removeheaderrows <- grep(paste(iyear,"Elk Harvest"), seasonONE)
+  seasonONE <- seasonONE[-removeheaderrows]
+  
+  # determine column names 
+  columnnames <- grep("([:alpha:])", seasonONE)
+  seasonONE1 <- seasonONE[-columnnames]
+  columnnames3 <- c("Unit","Antlered.Harvest","Antlered.Hunters","Antlered.Success",
+                    "Antlerless.Harvest","Antlerless.Hunters","Antlerless.Success")
+  
+  seasonONE1 <- str_trim(seasonONE1) # remove extra whitespace
+  pagenumbers <- grep("\\s+", seasonONE1) # remove page numbers
+  seasonONE2 <- seasonONE1[pagenumbers]
+  
+  # now that it is cleaned up, use the white space to separate into columns
+  seasonONE3 <- str_split_fixed(seasonONE2,pattern = "\\s+", n=length(columnnames3))
+  seasonONE3 <- as.data.frame(seasonONE3) # and convert into a dataframe
+  colnames(seasonONE3) <- columnnames3 # apply our column names
+  
+  # add the season column
+  seasonONE3$Season <- 1
+  
+  ######## SEASON TWO ######## 
+  # identify season 2 data
+  seasonTWOstart <- grep(tableheadings[2], COElkEitherSexd)[1]
+  seasonTWOend <- grep(tableheadings[3], COElkEitherSexd)[1]
+  # seasonTWO <- COElkEitherSexd[((seasonTWOstart+1):(seasonTWOend-1))]
+  seasonTWO <- COElkEitherSexd[((seasonTWOstart):(seasonTWOend-1))]
+  
+  # remove rows with the table headers
+  removeheaderrows <- grep(" Elk Harvest", seasonTWO)
+  seasonTWO <- seasonTWO[-removeheaderrows]
+  
+  # determine column names 
+  columnnames <- grep("([:alpha:])", seasonTWO)
+  seasonTWO1 <- seasonTWO[-columnnames]
+  columnnames3 <- c("Unit","Antlered.Harvest","Antlered.Hunters","Antlered.Success",
+                    "Antlerless.Harvest","Antlerless.Hunters","Antlerless.Success")
+  
+  seasonTWO1 <- str_trim(seasonTWO1) # remove extra whitespace
+  pagenumbers <- grep("\\s+", seasonTWO1) # remove page numbers
+  seasonTWO2 <- seasonTWO1[pagenumbers]
+  
+  # now that it is cleaned up, use the white space to separate into columns
+  seasonTWO3 <- str_split_fixed(seasonTWO2,pattern = "\\s+", n=length(columnnames3))
+  seasonTWO3 <- as.data.frame(seasonTWO3) # and convert into a dataframe
+  colnames(seasonTWO3) <- columnnames3 # apply our column names
+  
+  # add the season column
+  seasonTWO3$Season <- 2
+  
+  ######## SEASON THREE ######## 
+  # identify season 3 data
+  seasonTHREEstart <- grep(tableheadings[3], COElkEitherSexd)[1]
+  seasonTHREEend <- grep(tableheadings[4], COElkEitherSexd)[1]
+  # seasonTHREE <- COElkEitherSexd[((seasonTHREEstart+1):(seasonTHREEend-1))]
+  seasonTHREE <- COElkEitherSexd[((seasonTHREEstart):(seasonTHREEend-1))]
+  
+  # remove rows with the table headers
+  removeheaderrows <- grep(" Elk Harvest", seasonTHREE)
+  seasonTHREE <- seasonTHREE[-removeheaderrows]
+  
+  # determine column names
+  columnnames <- grep("([:alpha:])", seasonTHREE)
+  seasonTHREE1 <- seasonTHREE[-columnnames]
+  columnnames3 <- c("Unit","Antlered.Harvest","Antlered.Hunters","Antlered.Success",
+                    "Antlerless.Harvest","Antlerless.Hunters","Antlerless.Success")
+  
+  seasonTHREE1 <- str_trim(seasonTHREE1) # remove extra whitespace
+  pagenumbers <- grep("\\s+", seasonTHREE1) # remove page numbers
+  seasonTHREE2 <- seasonTHREE1[pagenumbers]
+  
+  # now that it is cleaned up, use the white space to separate into columns
+  seasonTHREE3 <- str_split_fixed(seasonTHREE2,pattern = "\\s+", n=length(columnnames3))
+  seasonTHREE3 <- as.data.frame(seasonTHREE3) # and convert into a dataframe
+  colnames(seasonTHREE3) <- columnnames3 # apply our column names
+  
+  # add the season column
+  seasonTHREE3$Season <- 3
+  
+  
+  ######## SEASON FOUR ######## 
+  # identify season 4 data
+  seasonFOURstart <- grep(tableheadings[4], COElkEitherSexd)[1]
+  # seasonFOUR <- COElkEitherSexd[((seasonFOURstart+1):(length(COElkEitherSexd)))] # to the end
+  seasonFOUR <- COElkEitherSexd[((seasonFOURstart):(length(COElkEitherSexd)))] # to the end
+  
+  # remove rows with the table headers
+  removeheaderrows <- grep(" Elk Harvest", seasonFOUR)
+  seasonFOUR <- seasonFOUR[-removeheaderrows]
+  
+  # determine column names 
+  columnnames <- grep("([:alpha:])", seasonFOUR)
+  seasonFOUR1 <- seasonFOUR[-columnnames]
+  columnnames3 <- c("Unit","Antlered.Harvest","Antlered.Hunters","Antlered.Success",
+                    "Antlerless.Harvest","Antlerless.Hunters","Antlerless.Success")
+  
+  seasonFOUR1 <- str_trim(seasonFOUR1) # remove extra whitespace
+  pagenumbers <- grep("\\s+", seasonFOUR1) # remove page numbers
+  seasonFOUR2 <- seasonFOUR1[pagenumbers]
+  
+  # now that it is cleaned up, use the white space to separate into columns
+  seasonFOUR3 <- str_split_fixed(seasonFOUR2,pattern = "\\s+", n=length(columnnames3))
+  seasonFOUR3 <- as.data.frame(seasonFOUR3) # and convert into a dataframe
+  colnames(seasonFOUR3) <- columnnames3 # apply our column names
+  
+  # add the season column
+  seasonFOUR3$Season <- 4
+  
+  # combine season data
+  COElkRifle <- rbind(seasonONE3,seasonTWO3,seasonTHREE3,seasonFOUR3)
+  Antlered <- select(COElkRifle, Unit, Season, Antlered.Harvest, Antlered.Hunters, Antlered.Success)
+  Antlerless <- select(COElkRifle, Unit, Season, Antlerless.Harvest, Antlerless.Hunters, Antlerless.Success)
+  
+  COElkRifle1 <- rbind.fill(Antlered,Antlerless)
+  ##################################
+  # Now, use the tables from the Limited Draws
+  
+  # The document holds more information than we are 
+  # Remove Muzzleloader
+  
+  # Remove Split Season
+  
+  # In our case we are looking for 
+  tableheadings <- c(paste(iyear,"Season Limited Antlered Seasons"),
+                     paste(iyear,"Season Limited Antlerless"),
+                     paste(iyear,"Season Limited Either"))
+  
+  # Notice that the tables run across pages, there are some pages that will have
+  # info we want and info we want to ignore
+  
+  # Identify pages with the table headings we identified
+  limitedantlered <- grep(tableheadings[1], COElka)
+  limitedantlerless <- grep(tableheadings[2], COElka)
+  limitedeither <- grep(tableheadings[3], COElka)
+
   rifleseasons <- unique(c(rifle1,rifle2,rifle3,rifle4))
   COElkb <- COElka[rifleseasons]
   
