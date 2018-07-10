@@ -49,9 +49,9 @@ for (iyear in years) {
   # will help separate lines from each other
   COElkEitherSexa <- strsplit(COElkEitherSex, "\n")
   
-  # years starting in 2014 have a cover page or table of contents
-  if (iyear >= 2014) {
-    COElkEitherSexa <- COElkEitherSexa[-1] # remove cover page (map, or table of contents)
+  # years starting in 2016 have a cover page or table of contents
+  if (iyear >= 2016) { #was 2014??
+    COElkEitherSexa <- COElkEitherSexa[-1:-4] # remove cover page (map, or table of contents)
   }
   
   # The document holds more information than we are after.
@@ -223,27 +223,72 @@ for (iyear in years) {
   COElkRifle1 <- rbind.fill(Antlered,Antlerless)
   ##################################
   # Now, use the tables from the Limited Draws
+  ## Antlered, Antlerless, Either-sex
+  ## 1st, 2nd, 3rd, 4th seasons
+  limitedantlered1 <- grep(paste(iyear,"Elk Harvest, Hunters and Recreation Days for 1st Season Limited Antlered"), COElkEitherSexa)
+  # 2017 include page 46, they messed the table header
   
-  # The document holds more information than we are 
-  # Remove Muzzleloader
+  limitedantlered2 <- grep(paste(iyear,"Elk Harvest, Hunters and Recreation Days for 2nd Season Limited Antlered"), COElkEitherSexa)
+  limitedantlered3 <- grep(paste(iyear,"Elk Harvest, Hunters and Recreation Days for 3rd Season Limited Antlered"), COElkEitherSexa)
+  limitedantlered4 <- grep(paste(iyear,"Elk Harvest, Hunters and Recreation Days for 4th Season Limited Antlered"), COElkEitherSexa)
   
-  # Remove Split Season
+  # limitedantlerless1 <- "Elk Harvest, Hunters and Recreation Days for 1st Season Limited Antlerless"
+  limitedantlerless1 <- "Elk Harvest, Hunters and Recreation Days for 1st Season Limited Antlered"
   
-  # In our case we are looking for 
-  tableheadings <- c(paste(iyear,"Season Limited Antlered Seasons"),
-                     paste(iyear,"Season Limited Antlerless"),
-                     paste(iyear,"Season Limited Either"))
+  limitedantlerless1a <- grep(paste(iyear,limitedantlerless1), COElkEitherSexa)
+  limitedantlerless1a <- COElkEitherSexa[limitedantlerless1a]
+  # unlist page elements
+  limitedantlerless1b <- unlist(limitedantlerless1a)
+  # remove first column label rows "Total        Total    Percent        Total"
+  # firstcollabels <- grep("Total        Total    Percent        Total", limitedantlerless1b)
+  firstcollabels <- grep("Total        Total    Percent        Total", limitedantlerless1b)
   
-  # Notice that the tables run across pages, there are some pages that will have
-  # info we want and info we want to ignore
+  limitedantlerless1b <- limitedantlerless1b[-firstcollabels]
+  tablestart <- grep(limitedantlerless1, limitedantlerless1b)[1]
+  tableend <- grep("Total", limitedantlerless1b)[1]
+  limitedantlerless1c <- limitedantlerless1b[((tablestart+1):(tableend-1))]
   
-  # Identify pages with the table headings we identified
-  limitedantlered <- grep(tableheadings[1], COElka)
-  limitedantlerless <- grep(tableheadings[2], COElka)
-  limitedeither <- grep(tableheadings[3], COElka)
+  # remove rows with the table headers
+  removelabels <- grep("([:alpha:])", limitedantlerless1c)
+  # removelabels <- c(grep(paste(iyear,"Elk Harvest"), limitedantlerless1c), grep("Seasons", limitedantlerless1c))
+  limitedantlerless1c <- limitedantlerless1c[-removelabels]
+  
+  limitedantlerless1c <- str_trim(limitedantlerless1c) # remove extra whitespace
+  # remove page numbers
+  nonpagenumbers <- grep("\\s+", limitedantlerless1c) 
+  limitedantlerless1c <- limitedantlerless1c[nonpagenumbers]
+  
+  # now that it is cleaned up, use the white space to separate into columns
+  columnnames <- c("Unit","Antlered.Harvest","Antlerless.Harvest.Cows","Antlerless.Harvest.Calves",
+                   "Antlerless.Harvest","Antlerless.Hunters","Success","Rec Days")
+  limitedantlerless1d <- str_split_fixed(limitedantlerless1c,pattern = "\\s+", n=length(columnnames))
+  limitedantlerless1d <- as.data.frame(limitedantlerless1d) # and convert into a dataframe
+  colnames(limitedantlerless1d) <- columnnames # apply our column names
+  
+  # add the season column
+  limitedantlerless1d$Season <- 1
+  
+  
+  limitedantlerless2 <- grep(paste(iyear,"Elk Harvest, Hunters and Recreation Days for 2nd Season Limited Antlerless"), COElkEitherSexa)
+  limitedantlerless3 <- grep(paste(iyear,"Elk Harvest, Hunters and Recreation Days for 3rd Season Limited Antlerless"), COElkEitherSexa)
+  limitedantlerless4 <- grep(paste(iyear,"Elk Harvest, Hunters and Recreation Days for 4th Season Limited Antlerless"), COElkEitherSexa)
+  
+  limitedeithersex1 <- grep(paste(iyear,"Elk Harvest, Hunters and Recreation Days for 1st Season Limited Either"), COElkEitherSexa)
+  limitedeithersex2 <- grep(paste(iyear,"Elk Harvest, Hunters and Recreation Days for 2nd Season Limited Either"), COElkEitherSexa)
+  limitedeithersex3 <- grep(paste(iyear,"Elk Harvest, Hunters and Recreation Days for 3rd Season Limited Either"), COElkEitherSexa)
+  limitedeithersex4 <- grep(paste(iyear,"Elk Harvest, Hunters and Recreation Days for 4th Season Limited Either"), COElkEitherSexa)
+  
+  # keep the pages that have these tables
+  limitedtables <- unique(c(limitedantlered1,limitedantlered2,limitedantlered3,limitedantlered4,
+                            limitedantlerless1,limitedantlerless2,limitedantlerless3,limitedantlerless4,
+                            limitedeithersex1,limitedeithersex2,limitedeithersex3,limitedeithersex4))
+  COElkb <- COElkEitherSexa[limitedtables]
+  
+  # Remove Muzzleloader?
+  
+  # Remove Split Season?
+  
 
-  rifleseasons <- unique(c(rifle1,rifle2,rifle3,rifle4))
-  COElkb <- COElka[rifleseasons]
   
   # the first page has the end of a previous table, remove it so we can have consistent columns
   firsttable <- COElkb[[1]]
