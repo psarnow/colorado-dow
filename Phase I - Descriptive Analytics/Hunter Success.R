@@ -22,44 +22,49 @@ library(scales, quietly = T)
 theme_set(theme_minimal())
 #' Run script to get hunter data
 #+ source hunter data, message=F, warning=F
-source('~/_code/colorado-dow/datasets/read colorado dow pdf.R', echo=F)
+source('~/_code/colorado-dow/datasets/Colorado Elk Harvest Data.R', echo=F)
 #' Table of the data
 COElkRifleAll
 
 #' # Statewide Elk Hunter Success
 #' ### By Year
 #' First lets look at the entire state as a whole
+# Recalc success using all the hunter and harvest results
 COElkSuccessStatewide <- summarise(group_by(COElkRifleAll,Year,Unit),
-                                   Success = mean(Success,na.rm = T))
+                                   Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T),
+                                   Harvest = sum(c(Harvest.Antlered,Harvest.Antlerless),na.rm = T),
+                                   Success = Harvest / Hunters)
 
 COElkSuccessStatewide <- summarise(group_by(COElkSuccessStatewide,Year),
-                                   Success = mean(Success)/100)
+                                   Success = mean(Success))
 
 ggplot(COElkSuccessStatewide, aes(Year,Success)) +
   geom_bar(stat="identity") +
   scale_y_continuous(labels = percent) +
-  coord_cartesian(ylim = c(.15,.25)) +
+  coord_cartesian(ylim = c(.16,.25)) +
   labs(title="Statewide Elk Hunter Success", caption="source: cpw.state.co.us")
 
 #' There is a general trend since 2006 of declining hunter success. 2009 Did have a 'reset' of 
 #' success and with the exception of 2015 rates have been decreasing. I should note that 2017 was higher
 #' than 2016, hopefully that positive trend continues for 2018.
 #' 
-#' **FUTURE** what happened in 2015 for hunter success rates to increase and match those from 2006, and 2009?
+#' **FUTURE** what happened in 2009 and 2015 that increased the success rates from their preceeding years?
 #' 
-#' **FUTURE** why are success rates declining?
+#' **FUTURE** why are success rates declining overall?
 #' 
 #' ### By Hunting Season
 COElkSuccessStatewide.Season <- summarise(group_by(COElkRifleAll,Season,Unit),
-                                   Success = mean(Success,na.rm = T))
+                                          Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T),
+                                          Harvest = sum(c(Harvest.Antlered,Harvest.Antlerless),na.rm = T),
+                                          Success = Harvest / Hunters)
 
 COElkSuccessStatewide.Season <- summarise(group_by(COElkSuccessStatewide.Season,Season),
-                                   Success = mean(Success)/100)
+                                   Success = mean(Success))
 
 ggplot(COElkSuccessStatewide.Season, aes(Season,Success)) +
   geom_bar(stat="identity") +
   scale_y_continuous(labels = percent) +
-  coord_cartesian(ylim = c(.15,.25)) +
+  coord_cartesian(ylim = c(.1,.25)) +
   labs(title="Statewide Elk Hunter Success by Season", caption="source: cpw.state.co.us")
 
 #' First and Fourth seasons have better success rates than the others.
@@ -90,7 +95,9 @@ COroads <- filter(USAroads, long > longset[1] & long < longset[2])
 COroads <- filter(COroads, lat > latset[1] & lat < latset[2])
 
 COElkSuccess <- summarise(group_by(COElkRifleAll,Year,Unit),
-                          Success = mean(Success,na.rm = T)/100)
+                          Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T),
+                          Harvest = sum(c(Harvest.Antlered,Harvest.Antlerless),na.rm = T),
+                          Success = Harvest / Hunters)
 
 Year2017 <- filter(COElkSuccess, Year == "2017")
 HunterSuccesstoPlot <- left_join(Unitboundaries2,Year2017, by=c("Unit"))
@@ -110,22 +117,27 @@ ggplot(HunterSuccesstoPlot, aes(long, lat, group = group)) +
 
 #' ## Year to Year Hunter Success Trends
 #' Lets look at the changes from year to year.
-#+ include=F
-dev.off()
 
-png(file="HunterSuccessMap%02d.png", width=1400, height=1000)
+#' Update fill max
+COElkSuccess$fillcolor <- COElkSuccess$Success
+maxfillcolor <- boxplot.stats(COElkSuccess$Success)$stats[5] #ignore outliers
+#' For charting purposes make all extreme values the same as the statistical max
+COElkSuccess$fillcolor[COElkSuccess$fillcolor>maxfillcolor] <- maxfillcolor
+
 icounter <- 0
 for (imap in unique(COElkSuccess$Year)){
+  png(file=paste("HunterSuccessMap",imap,".png"), width=1400, height=1000)
   yearplot <- filter(COElkSuccess, Year == imap)
   HunterSuccesstoPlot <- left_join(Unitboundaries2,yearplot, by=c("Unit"))
   p1 <- ggplot(HunterSuccesstoPlot, aes(long, lat, group = group)) + 
-    geom_polygon(aes(fill = Success),colour = "grey50", size = .2) + #Unit boundaries
+    geom_polygon(aes(fill = fillcolor),colour = "grey50", size = .2) + #Unit boundaries
     geom_path(data = COroads,aes(x = long, y = lat, group = group), color="#3878C7",size=2) + #Roads
     geom_text(data=data_centroids,aes(x=longitude,y=latitude,label = Unit),size=5) + #Unit labels
     scale_fill_distiller(palette = "RdPu",
                          direction = 1,
                          na.value = 'grey',
-                         limits = c(0,max(COElkSuccess$Success))) + #fix so each year chart has same color breaks
+                         name = "Success",
+                         limits = c(0,maxfillcolor)) + #fix so each year chart has same color breaks
     xlab("") + 
     ylab("") +
     theme(panel.background = element_rect(fill='white')) +
@@ -135,13 +147,9 @@ for (imap in unique(COElkSuccess$Year)){
     theme(plot.subtitle=element_text(hjust = icounter/length(unique(COElkSuccess$Year)))) +
     labs(title="Colorado Elk Hunter Success by Year", subtitle=imap, caption="source: cpw.state.co.us")
   plot(p1)
+  dev.off()
   icounter <- icounter + 1
 }
-#+ device, message=F, warning=F
-dev.off()
-
-#' Convert the .png files to one .gif file using ImageMagick. 
-system("convert -delay 150 *.png HunterSuccessmap.gif")
 
 #' cleanup
 file.remove(list.files(pattern=".png"))
@@ -153,23 +161,30 @@ file.remove(list.files(pattern=".png"))
 #' ## Seasonal Hunter Success Trends
 #' Lets look at the changes for each season
 COElkSuccessSeason <- summarise(group_by(COElkRifleAll,Season,Unit),
-                          Success = mean(Success,na.rm = T)/100)
-#+ include=F
-dev.off()
+                                Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T),
+                                Harvest = sum(c(Harvest.Antlered,Harvest.Antlerless),na.rm = T),
+                                Success = Harvest / Hunters)
 
-png(file="HunterSuccessSeasonMap%02d.png", width=1400, height=1000)
+#' Update fill max
+COElkSuccessSeason$fillcolor <- COElkSuccessSeason$Success
+maxfillcolor <- boxplot.stats(COElkSuccessSeason$Success)$stats[5] #ignore outliers
+#' For charting purposes make all extreme values the same as the statistical max
+COElkSuccessSeason$fillcolor[COElkSuccessSeason$fillcolor>maxfillcolor] <- maxfillcolor
+
 icounter <- 0
 for (imap in unique(COElkSuccessSeason$Season)){
+  png(file=paste("HunterSuccessSeasonMap",imap,".png"), width=1400, height=1000)
   seasonplot <- filter(COElkSuccessSeason, Season == imap)
   HunterSuccesstoPlot <- left_join(Unitboundaries2,seasonplot, by=c("Unit"))
   p1 <- ggplot(HunterSuccesstoPlot, aes(long, lat, group = group)) + 
-    geom_polygon(aes(fill = Success),colour = "grey50", size = .2) + #Unit boundaries
+    geom_polygon(aes(fill = fillcolor),colour = "grey50", size = .2) + #Unit boundaries
     geom_path(data = COroads,aes(x = long, y = lat, group = group), color="#3878C7",size=2) + #Roads
     geom_text(data=data_centroids,aes(x=longitude,y=latitude,label = Unit),size=5) + #Unit labels
     scale_fill_distiller(palette = "RdPu",
                          direction = 1,
                          na.value = 'grey',
-                         limits = c(0,max(COElkSuccessSeason$Success))) + #fix so each year chart has same color breaks
+                         name = 'Success',
+                         limits = c(0,maxfillcolor)) + #fix so each year chart has same color breaks
     xlab("") + 
     ylab("") +
     theme(panel.background = element_rect(fill='white')) +
@@ -179,10 +194,9 @@ for (imap in unique(COElkSuccessSeason$Season)){
     theme(plot.subtitle=element_text(hjust = icounter/length(unique(COElkSuccessSeason$Season)))) +
     labs(title="Colorado Elk Hunter Success by Season", subtitle=imap, caption="source: cpw.state.co.us")
   plot(p1)
+  dev.off()
   icounter <- icounter + 1
 }
-#+ device1, message=F, warning=F
-dev.off()
 
 #' Convert the .png files to one .gif file using ImageMagick. 
 system("convert -delay 150 *.png HunterSuccessSeasonmap.gif")
@@ -226,7 +240,9 @@ HunterSuccessSeasonRanklast3$Season[HunterSuccessSeasonRanklast3$Season == "4"] 
 
 HunterSuccessSeasonRanklast3$Unit_Season <- paste(HunterSuccessSeasonRanklast3$Unit,HunterSuccessSeasonRanklast3$Season,sep="\n")
 HunterSuccessSeasonRanklast3 <- summarise(group_by(HunterSuccessSeasonRanklast3,Unit_Season),
-                                    Success = mean(Success,na.rm = T)/100)
+                                          Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T),
+                                          Harvest = sum(c(Harvest.Antlered,Harvest.Antlerless),na.rm = T),
+                                          Success = Harvest / Hunters)
 
 HunterSuccessSeasonRanklast3$SuccessRank = rank(-HunterSuccessSeasonRanklast3$Success)
 

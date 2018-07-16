@@ -32,10 +32,10 @@ COElkPopulationAll
 #' First lets look at the entire state as a whole
 # Population of the Data Analysis Units (DAU) -- Herd IDs
 COElkPopulationStatewide <- summarise(group_by(COElkPopulationAll,Year,DAU),
-                                      Population = mean(Population))
+                                      Population.DAU = mean(Population.DAU))
 
 COElkPopulationStatewide <- summarise(group_by(COElkPopulationStatewide,Year),
-                                      Population = sum(Population))
+                                      Population = sum(Population.DAU))
 
 ggplot(COElkPopulationStatewide, aes(Year,Population)) +
   geom_bar(stat="identity") +
@@ -72,7 +72,7 @@ COroads <- filter(COroads, lat > latset[1] & lat < latset[2])
 
 # Population of the Data Analysis Units (DAU) -- Herd IDs
 COElkUnitPopulation <- summarise(group_by(COElkPopulationAll,Year,Unit),
-                                 Population = mean(Unit_Pop))
+                                 Population = mean(Population.Unit))
 
 Year2016 <- filter(COElkUnitPopulation, Year == "2016")
 PopulationtoPlot <- left_join(Unitboundaries2,Year2016, by=c("Unit"))

@@ -120,7 +120,7 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">Download and Read PDF Elk Population Estimates from Colorado CPW</h1>
 <h4 class="author"><em>Pierre Sarnow</em></h4>
-<h4 class="date"><em>Fri Jun 1 07:21:20 2018</em></h4>
+<h4 class="date"><em>Fri Jul 13 10:12:15 2018</em></h4>
 
 </div>
 
@@ -155,15 +155,16 @@ years &lt;- c(2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016)</code
 <pre class="r"><code>COElkPopulationAll &lt;- NULL # Initialize
 for (iyear in years) {
   
-  if (iyear &gt;= 2015) {
-    download.file(paste(&quot;http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/&quot;,
-                        iyear,&quot;ElkPopulationEstimates.pdf&quot;,sep=&quot;&quot;),
-                  paste(iyear,&quot;COElkPopulation&quot;,sep=&quot;&quot;))
-  } else {
-    download.file(paste(&quot;http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/&quot;,
-                        iyear,&quot;ElkPopulationEstimate.pdf&quot;,sep=&quot;&quot;),
-                  paste(iyear,&quot;COElkPopulation&quot;,sep=&quot;&quot;))
-  }
+  # RUN ONCE to download files
+  # if (iyear &gt;= 2015) {
+  #   download.file(paste(&quot;http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/&quot;,
+  #                       iyear,&quot;ElkPopulationEstimates.pdf&quot;,sep=&quot;&quot;),
+  #                 paste(iyear,&quot;COElkPopulation&quot;,sep=&quot;&quot;))
+  # } else {
+  #   download.file(paste(&quot;http://cpw.state.co.us/Documents/Hunting/BigGame/Statistics/Elk/&quot;,
+  #                       iyear,&quot;ElkPopulationEstimate.pdf&quot;,sep=&quot;&quot;),
+  #                 paste(iyear,&quot;COElkPopulation&quot;,sep=&quot;&quot;))
+  # }
   
   # This function will directly export the raw text in a character vector with spaces to show 
   # the white space and \n to show the line breaks.
@@ -202,19 +203,20 @@ for (iyear in years) {
   colnames(COElkPopb2) &lt;- columnnames3 # apply our column names
   
   COElkPopb2$Estimate &lt;- as.numeric(gsub(&quot;,&quot;, &quot;&quot;, COElkPopb2$Estimate)) # remove commas from Estimate
-  
   # We have been operating by Units, so lets devide the population estimate across the Units the herd is in.... 
   # assume they are evenly distributed
   COElkPopb2$Num_GMUnits &lt;- str_count(as.character(COElkPopb2$GMUnits), pattern = &quot;,&quot;) + 1
-  COElkPopb2$Est_Unit &lt;- COElkPopb2$Estimate / COElkPopb2$Num_GMUnits
+  COElkPopb2$Population.Unit &lt;- COElkPopb2$Estimate / COElkPopb2$Num_GMUnits
 
   # get the GMUnits out
   COElkPopb3 &lt;- separate(COElkPopb2, GMUnits, sep = &quot;,&quot;,LETTERS)
   COElkPopb3 &lt;- gather(COElkPopb3,&quot;ignore&quot;,Unit,A:Z)
   COElkPopb3 &lt;- select(COElkPopb3, -ignore)
   COElkPopb3 &lt;- filter(COElkPopb3, !is.na(Unit))
- 
-  COElkPopb3$Year &lt;- iyear
+  COElkPopb3$Unit &lt;- str_trim(COElkPopb3$Unit) # remove extra whitespace
+  
+  colnames(COElkPopb3)[colnames(COElkPopb3)==&quot;Estimate&quot;] &lt;- &quot;Population.DAU&quot; #change label for clarification
+  COElkPopb3$Year &lt;- as.character(iyear)
   COElkPopulationAll &lt;- rbind.fill(COElkPopulationAll,COElkPopb3)
   
 }</code></pre>
@@ -259,13 +261,13 @@ COElkPopulationAll$Unit &lt;- str_remove(COElkPopulationAll$Unit, &quot;\\)+&quo
 COElkPopulationAll$Unit &lt;- str_remove(COElkPopulationAll$Unit, &quot;\\(+&quot;) # remove the (</code></pre>
 <p>Take a peak at the dataframe</p>
 <pre class="r"><code>head(COElkPopulationAll)</code></pre>
-<pre><code>##   DAU Estimate Bull_Ratio Num_GMUnits Est_Unit Unit Year
-## 1   1     2530                      2 1265.000    2 2005
-## 2   2    16100                      7 2300.000    3 2005
-## 3   3     8170                      5 1634.000    6 2005
-## 4   4     3810                      5  762.000    7 2005
-## 5   6    37930                     12 3160.833   11 2005
-## 6   7     4500                      2 2250.000   15 2005</code></pre>
+<pre><code>##   DAU Population.DAU Bull_Ratio Num_GMUnits Population.Unit Unit Year
+## 1   1           2530                      2        1265.000    2 2005
+## 2   2          16100                      7        2300.000    3 2005
+## 3   3           8170                      5        1634.000    6 2005
+## 4   4           3810                      5         762.000    7 2005
+## 5   6          37930                     12        3160.833   11 2005
+## 6   7           4500                      2        2250.000   15 2005</code></pre>
 </div>
 
 

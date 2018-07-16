@@ -1,6 +1,9 @@
 #' ---
 #' title: "Download and Read PDF Harvest Tables from Colorado CPW"
 #' author: "Pierre Sarnow"
+#' output:
+#'   html_document:
+#'     df_print: paged
 #' ---
 
 #' ## Description
@@ -19,8 +22,10 @@
 #'
 setwd("~/_code/colorado-dow/datasets")
 
-#' Load required libraries for acquiring data from pdf
-library(pdftools,quietly = T)
+#' Load required libraries 
+library(plyr,quietly = T)
+library(dplyr,quietly = T)
+library(pdftools,quietly = T) #for acquiring data from pdf
 library(stringr,quietly = T)
 library(toOrdinal,quietly = T) #add ordinals to numbers
 
@@ -119,10 +124,10 @@ for (iyear in years) {
   SuccessTables$Hunters.Antlered <- as.numeric(gsub(",", "", SuccessTables$Hunters.Antlered))
   SuccessTables$Hunters.Antlerless <- as.numeric(gsub(",", "", SuccessTables$Hunters.Antlerless))
   SuccessTables$Season <- as.character(SuccessTables$Season)
-  # SuccessTables$Harvest.Antlered <- as.numeric(levels(SuccessTables$Harvest.Antlered))[as.integer(SuccessTables$Harvest.Antlered)]
-  # SuccessTables$Success.Antlered <- as.numeric(levels(SuccessTables$Success.Antlered))[as.integer(SuccessTables$Success.Antlered)]
-  # SuccessTables$Harvest.Antlerless <- as.numeric(levels(SuccessTables$Harvest.Antlerless))[as.integer(SuccessTables$Harvest.Antlerless)]
-  # SuccessTables$Success.Antlerless <- as.numeric(levels(SuccessTables$Success.Antlerless))[as.integer(SuccessTables$Success.Antlerless)]
+  SuccessTables$Harvest.Antlered <- as.numeric(levels(SuccessTables$Harvest.Antlered))[as.integer(SuccessTables$Harvest.Antlered)]
+  SuccessTables$Success.Antlered <- as.numeric(levels(SuccessTables$Success.Antlered))[as.integer(SuccessTables$Success.Antlered)]
+  SuccessTables$Harvest.Antlerless <- as.numeric(levels(SuccessTables$Harvest.Antlerless))[as.integer(SuccessTables$Harvest.Antlerless)]
+  SuccessTables$Success.Antlerless <- as.numeric(levels(SuccessTables$Success.Antlerless))[as.integer(SuccessTables$Success.Antlerless)]
   
   # Now, use the tables from the Limited Draws
   ## 1st, 2nd, 3rd, 4th seasons
@@ -181,14 +186,17 @@ for (iyear in years) {
         LimitedTable.3$HuntCode <- paste("EM",formatC(as.numeric(LimitedTable.3$Unit), width = 3, format = "d", flag = "0"),"O",iseason,"R",sep="")
         # all of the hunters were hunting Antlered
         colnames(LimitedTable.3)[colnames(LimitedTable.3)=="Hunters.Total"] <- "Hunters.Antlered"
+        colnames(LimitedTable.3)[colnames(LimitedTable.3)=="Success"] <- "Success.Antlered"
       } else if (ielk == "Antlerless") {
         LimitedTable.3$HuntCode <- paste("EF",formatC(as.numeric(LimitedTable.3$Unit), width = 3, format = "d", flag = "0"),"O",iseason,"R",sep="")
         # all of the hunters were hunting Antlerless
         colnames(LimitedTable.3)[colnames(LimitedTable.3)=="Hunters.Total"] <- "Hunters.Antlerless"
+        colnames(LimitedTable.3)[colnames(LimitedTable.3)=="Success"] <- "Success.Antlerless"
       } else {
         LimitedTable.3$HuntCode <- paste("EE",formatC(as.numeric(LimitedTable.3$Unit), width = 3, format = "d", flag = "0"),"O",iseason,"R",sep="")
         # all of the hunters were hunting Either
         colnames(LimitedTable.3)[colnames(LimitedTable.3)=="Hunters.Total"] <- "Hunters.Either"
+        colnames(LimitedTable.3)[colnames(LimitedTable.3)=="Success"] <- "Success.Either"
       }
       LimitedTables <- rbind.fill(LimitedTables,LimitedTable.3)
      
@@ -198,10 +206,10 @@ for (iyear in years) {
   }
   
   LimitedTables.All <- select(LimitedTables.All, -Harvest.Total, -RecDays) # remove some fields not interested in right now
+ 
   # Clean up field data types
   LimitedTables.All$Hunters.Either <- as.numeric(gsub(",", "", LimitedTables.All$Hunters.Either))
-  LimitedTables.All$Success <- as.numeric(levels(LimitedTables.All$Success))[as.integer(LimitedTables.All$Success)]
-  
+  LimitedTables.All$Success.Either <- as.numeric(levels(LimitedTables.All$Success.Either))[as.integer(LimitedTables.All$Success.Either)]
   LimitedTables.All$Harvest.Antlered <- as.numeric(levels(LimitedTables.All$Harvest.Antlered))[as.integer(LimitedTables.All$Harvest.Antlered)]
   LimitedTables.All$Harvest.Antlerless.Cows <- as.numeric(levels(LimitedTables.All$Harvest.Antlerless.Cows))[as.integer(LimitedTables.All$Harvest.Antlerless.Cows)]
   LimitedTables.All$Harvest.Antlerless.Calves <- as.numeric(levels(LimitedTables.All$Harvest.Antlerless.Calves))[as.integer(LimitedTables.All$Harvest.Antlerless.Calves)]
@@ -223,6 +231,12 @@ for (iyear in years) {
   # testS <- filter(SuccessTables, Unit == "18")
   
   COElkRifle <- rbind.fill(SuccessTables,LimitedTables.All)
+  
+  # Clean up Success data (if there were no hunters, success = NA)
+  COElkRifle$Success.Antlered[COElkRifle$Hunters.Antlered==0] <- NA
+  COElkRifle$Success.Antlerless[COElkRifle$Hunters.Antlerless==0] <- NA
+  COElkRifle$Success.Either[COElkRifle$Hunters.Either==0] <- NA
+  
   # test <- filter(COElkRifle, Unit == "18" & Season == "1")
   
   # COElkRifle <- left_join(LimitedTables.All,SuccessTables)
@@ -230,16 +244,11 @@ for (iyear in years) {
   COElkRifleAll <- rbind(COElkRifleAll,COElkRifle)
 }
 
-# will probably want to remove 'success' fields from the tables and recalc ourselves
-
 #' Create new statistics based on investigation
 # How much effort it takes to have a successful result
 # COElkRifleAll$Harvest_Effort <- COElkRifleAll$Days / COElkRifleAll$Harvest # From Phase I investigation
 # COElkRifleAll$Harvest_Effort[is.infinite(COElkRifleAll$Harvest_Effort)] <- NA # we get an inf where there was no harvest
 # COElkRifleAll$Success_Harvest <- COElkRifleAll$Harvest * (COElkRifleAll$Success / 100)
 
-#' Peek at the dataframe
-head(COElkRifleAll)
-
-test <- filter(COElkRifleAll, Unit == "77")
-test
+#' Heres the table
+COElkRifleAll

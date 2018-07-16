@@ -80,7 +80,7 @@ for (iyear in years) {
   # We have been operating by Units, so lets devide the population estimate across the Units the herd is in.... 
   # assume they are evenly distributed
   COElkPopb2$Num_GMUnits <- str_count(as.character(COElkPopb2$GMUnits), pattern = ",") + 1
-  COElkPopb2$Unit_Pop <- COElkPopb2$Estimate / COElkPopb2$Num_GMUnits
+  COElkPopb2$Population.Unit <- COElkPopb2$Estimate / COElkPopb2$Num_GMUnits
 
   # get the GMUnits out
   COElkPopb3 <- separate(COElkPopb2, GMUnits, sep = ",",LETTERS)
@@ -89,7 +89,7 @@ for (iyear in years) {
   COElkPopb3 <- filter(COElkPopb3, !is.na(Unit))
   COElkPopb3$Unit <- str_trim(COElkPopb3$Unit) # remove extra whitespace
   
-  colnames(COElkPopb3)[colnames(COElkPopb3)=="Estimate"] <- "Population" #change label for clarification
+  colnames(COElkPopb3)[colnames(COElkPopb3)=="Estimate"] <- "Population.DAU" #change label for clarification
   COElkPopb3$Year <- as.character(iyear)
   COElkPopulationAll <- rbind.fill(COElkPopulationAll,COElkPopb3)
   

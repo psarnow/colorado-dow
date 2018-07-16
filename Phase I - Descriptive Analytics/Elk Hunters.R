@@ -27,7 +27,7 @@ library(ggplot2, quietly = T)
 theme_set(theme_minimal())
 #' Run script to get hunter data
 #+ source population, message=F, warning=F
-source('~/_code/colorado-dow/datasets/read colorado dow pdf.R', echo=F)
+source('~/_code/colorado-dow/datasets/Colorado Elk Harvest Data.R', echo=F)
 #+ setdir, include=FALSE
 setwd("~/_code/colorado-dow/Phase I - Descriptive Analytics")
 
@@ -37,7 +37,7 @@ COElkRifleAll
 #' # Statewide Elk Hunters
 #' First lets look at the entire state as a whole
 COElkHuntersStatewide <- summarise(group_by(COElkRifleAll,Year,Unit),
-                                      Hunters = sum(Hunters,na.rm = T))
+                                   Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T))
 
 COElkHuntersStatewide <- summarise(group_by(COElkHuntersStatewide,Year),
                                    Hunters = sum(Hunters))
@@ -47,8 +47,8 @@ ggplot(COElkHuntersStatewide, aes(Year,Hunters)) +
   coord_cartesian(ylim = c(120000,160000)) +
   labs(title="Statewide Elk Hunters", caption="source: cpw.state.co.us")
 
-#' Besides 2009-2011 the number of hunters has been consistent. For those 3 years the number of hunters
-#' dropped from about 145,000 to 125,000
+#' At a highpoint in 2006 of ~151000, the number of hunters decreased to a low in 2009 of ~133000. 
+#' Since 2009 the total number of hunters has slightly increased from year to year.
 #' 
 #' ## Hunters by Unit
 #' I'd like to know where the hunters are distributed across the state.
@@ -57,7 +57,7 @@ ggplot(COElkHuntersStatewide, aes(Year,Hunters)) +
 #+ source hunt units, message=F, warning=F
 source('~/_code/colorado-dow/datasets/coordinate locations of cpw hunt units.R', echo=F)
 #+ setdir1, include=FALSE
-setwd("~/_code/colorado-dow/Phase I - Descriptive Analytics")
+# setwd("~/_code/colorado-dow/Phase I - Descriptive Analytics")
 #' Get a statemap with some roads on it
 #+ roaddata, message=F, warning=F
 roaddata <- rgdal::readOGR("~/_code/colorado-dow/datasets/ne_10m_roads/ne_10m_roads.shp")
@@ -77,7 +77,7 @@ COroads <- filter(COroads, lat > latset[1] & lat < latset[2])
 
 # Hunters in each unit (Combine the seasons)
 COElkUnitHunters <- summarise(group_by(COElkRifleAll,Year,Unit),
-                                 Hunters = sum(Hunters,na.rm = T))
+                              Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T))
 
 Year2017 <- filter(COElkUnitHunters, Year == "2017")
 HunterstoPlot <- left_join(Unitboundaries2,Year2017, by=c("Unit"))
@@ -98,9 +98,9 @@ ggplot(HunterstoPlot, aes(long, lat, group = group)) +
 #' ## Year to Year Hunter Trends
 #' Lets look at the hunter changes from year to year.
 
-png(file="HuntersMap%02d.png", width=1400, height=1000)
 icounter <- 0
 for (imap in unique(COElkUnitHunters$Year)){
+  png(file=paste("HuntersMap",imap,".png"), width=1400, height=1000)
   yearplot <- filter(COElkUnitHunters, Year == imap)
   HunterstoPlot <- left_join(Unitboundaries2,yearplot, by=c("Unit"))
   p1 <- ggplot(HunterstoPlot, aes(long, lat, group = group)) + 
@@ -121,10 +121,9 @@ for (imap in unique(COElkUnitHunters$Year)){
     theme(plot.subtitle=element_text(hjust = icounter/length(unique(COElkUnitHunters$Year)))) +
     labs(title="Colorado Elk Hunters", subtitle=imap, caption="source: cpw.state.co.us")
   plot(p1)
+  dev.off()
   icounter <- icounter + 1
 }
-#+ device, message=F, warning=F
-dev.off()
 
 #' Convert the .png files to one .gif file using ImageMagick. 
 system("convert -delay 150 *.png Huntersmap.gif")
