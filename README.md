@@ -38,6 +38,8 @@ Additionally, as most hunters know, weather plays a large role in hunting succes
 
 * [Where are the hunters at in Colorado?](http://rpubs.com/psarnow/396897)
 
+* [Where are the elk harvested at in Colorado?](http://rpubs.com/psarnow/405573)
+
 * [Which units have higher Elk to Hunter ratios?](http://rpubs.com/psarnow/396916)
 
 * [Which units have higher Hunter Success Rates?](http://rpubs.com/psarnow/397169)
