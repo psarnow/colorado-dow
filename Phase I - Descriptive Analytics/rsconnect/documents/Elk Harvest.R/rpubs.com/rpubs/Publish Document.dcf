@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/405573/66bec42c0cf446c682b002d364543e8d
+bundleId: https://api.rpubs.com/api/v1/document/405573/66bec42c0cf446c682b002d364543e8d
+url: http://rpubs.com/psarnow/405573
+when: 1532028938.9999

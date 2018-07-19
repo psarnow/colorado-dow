@@ -37,7 +37,7 @@ COElkDraw <- filter(COElkDrawAll, is.finite(Draw_Success) & !is.na(Draw_Success)
 # Cap success to 100%
 COElkDraw$Draw_Success[COElkDraw$Draw_Success>1] <- 1.00
 #' ### By Year
-DrawSuccessStatewide <- dplyr::summarise(group_by(COElkDraw,Year),
+DrawSuccessStatewide <- summarise(group_by(COElkDraw,Year),
                            Draw_Success = mean(Draw_Success,na.rm = T))
 
 ggplot(DrawSuccessStatewide, aes(Year,Draw_Success)) +
@@ -62,9 +62,28 @@ ggplot(DrawSuccessStatewide.Season, aes(Season,Draw_Success)) +
 #' 
 #' Is this because there are less licenses? or more applicants?  Well we saw that the number of hunters
 #' each year is fairly consistent.
-#' # TODO
-#' plot applicants per year
+#' # Applicants per year
+DrawApplicantsStatewide <- summarise(group_by(COElkDraw,Year),
+                                     Draw_Applicants = sum(Ttl_Chce_1,na.rm = T))
+
+ggplot(DrawApplicantsStatewide, aes(Year,Draw_Applicants)) +
+  geom_bar(stat="identity") +
+  # scale_y_continuous(labels = percent) +
+  coord_cartesian(ylim = c(75000,110000)) +
+  labs(title="Statewide Elk Hunter Draw Applicants", caption="source: cpw.state.co.us")
+#' The number of applicants is now at the levels from 2006, after dropping off for several years by
+#' 12,000. Could be economic related.
 #' 
+#' # Quota per year
+DrawQuotaStatewide <- summarise(group_by(COElkDraw,Year),
+                                     Quota = sum(Orig_Quota,na.rm = T))
+
+ggplot(DrawQuotaStatewide, aes(Year,Quota)) +
+  geom_bar(stat="identity") +
+  # scale_y_continuous(labels = percent) +
+  # coord_cartesian(ylim = c(75000,110000)) +
+  labs(title="Statewide Elk Hunter Draw Quota", caption="source: cpw.state.co.us")
+
 #' 
 #' ## Yearly Draw Success by Unit
 #' I'd like to know the distribution of Draw success across the state.
@@ -112,12 +131,10 @@ ggplot(DrawSuccesstoPlot, aes(long, lat, group = group)) +
 
 #' ## Year to Year Draw Success Trends
 #' Lets look at the changes from year to year.
-#+ include=F
-dev.off()
-
-png(file="DrawSuccessMap%02d.png", width=1400, height=1000)
+#' 
 icounter <- 0
 for (imap in unique(DrawSuccess$Year)){
+  png(file=paste("DrawSuccessMap",imap,".png"), width=1400, height=1000)
   yearplot <- filter(DrawSuccess, Year == imap)
   DrawSuccesstoPlot <- left_join(Unitboundaries2,yearplot, by=c("Unit"))
   p1 <- ggplot(DrawSuccesstoPlot, aes(long, lat, group = group)) + 
@@ -137,10 +154,9 @@ for (imap in unique(DrawSuccess$Year)){
     theme(plot.subtitle=element_text(hjust = icounter/length(unique(DrawSuccess$Year)))) +
     labs(title="Colorado Elk Draw Success by Year", subtitle=imap, caption="source: cpw.state.co.us")
   plot(p1)
+  dev.off() 
   icounter <- icounter + 1
 }
-#+ device, message=F, warning=F
-dev.off()
 
 #' Convert the .png files to one .gif file using ImageMagick. 
 system("convert -delay 150 *.png DrawSuccessmap.gif")
@@ -157,12 +173,10 @@ file.remove(list.files(pattern=".png"))
 #' 
 DrawSuccessSeason <- summarise(group_by(COElkDraw,Season,Unit),
                                Draw_Success = mean(Draw_Success,na.rm = T))
-#+ include=F
-dev.off()
 
-png(file="DrawSuccessSeasonMap%02d.png", width=1400, height=1000)
 icounter <- 0
 for (imap in unique(DrawSuccessSeason$Season)){
+  png(file=paste("DrawSuccessSeasonMap",imap,".png"), width=1400, height=1000)
   seasonplot <- filter(DrawSuccessSeason, Season == imap)
   DrawSuccesstoPlot <- left_join(Unitboundaries2,seasonplot, by=c("Unit"))
   p1 <- ggplot(DrawSuccesstoPlot, aes(long, lat, group = group)) + 
@@ -182,10 +196,9 @@ for (imap in unique(DrawSuccessSeason$Season)){
     theme(plot.subtitle=element_text(hjust = icounter/length(unique(DrawSuccessSeason$Season)))) +
     labs(title="Colorado Elk Draw Success by Season", subtitle=imap, caption="source: cpw.state.co.us")
   plot(p1)
+  dev.off()
   icounter <- icounter + 1
 }
-#+ device1, message=F, warning=F
-dev.off()
 
 #' Convert the .png files to one .gif file using ImageMagick. 
 system("convert -delay 150 *.png DrawSuccessSeasonmap.gif")
