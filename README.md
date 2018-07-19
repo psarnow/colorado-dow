@@ -30,6 +30,8 @@ CPW provides a lot of info for hunters to sift through.  Let's start by accessin
 
 * [Coordinate locations of the CPW hunt units](http://rpubs.com/psarnow/393672)
 
+* [CPW hunt unit boundaries and major highways](http://rpubs.com/psarnow/405816)
+
 Additionally, as most hunters know, weather plays a large role in hunting success. Let's grab some historical data from Dark Sky using their API
 * [Weather from Dark Sky](http://rpubs.com/psarnow/393658)
 
@@ -37,6 +39,8 @@ Additionally, as most hunters know, weather plays a large role in hunting succes
 * [Where are the elk at in Colorado?](http://rpubs.com/psarnow/396876)
 
 * [Where are the hunters at in Colorado?](http://rpubs.com/psarnow/396897)
+
+* [Where are the elk harvested at in Colorado?](http://rpubs.com/psarnow/405573)
 
 * [Which units have higher Elk to Hunter ratios?](http://rpubs.com/psarnow/396916)
 
