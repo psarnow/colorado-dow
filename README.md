@@ -20,7 +20,7 @@ Its also important to note that data modelers have a sense of what they are mode
 
 ## Setup -- Data Acquisition
 CPW provides a lot of info for hunters to sift through.  Let's start by accessing what they provide.
-* [Elk hunting statistics from CPW](http://rpubs.com/psarnow/404268 target="_blank")
+* [Elk hunting statistics from CPW](http://rpubs.com/psarnow/404268)
 
 * [Hunt Draw summaries from CPW](http://rpubs.com/psarnow/394721)
 
