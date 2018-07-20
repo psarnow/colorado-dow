@@ -27,6 +27,7 @@ library(plyr,quietly = T) # data wrangling
 library(dplyr,quietly = T) # data wrangling
 library(ggplot2, quietly = T) # charting
 library(ggthemes,quietly = T) # so I can add the highcharts theme and palette
+library(scales,quietly = T) # to load the percent function when labeling plots
 #' Set our preferred charting theme
 theme_set(theme_minimal()+theme_hc())
 #' Run script to get harvest data
@@ -359,7 +360,7 @@ COElkHarvestRatioStatewide <- summarise(group_by(COElkHarvestRatioStatewide,Year
 
 ggplot(COElkHarvestRatioStatewide, aes(Year,AntleredRatio)) +
   geom_bar(stat="identity",fill=ggthemes_data$hc$palettes$default[6]) +
-  # scale_y_continuous(labels = percent) +
+  scale_y_continuous(labels = percent) +
   ylab("Percent Antlered") +
   coord_cartesian(ylim = c(.5,.7)) +
   labs(title="Statewide Elk Harvest Ratio", caption="source: cpw.state.co.us")
