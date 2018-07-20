@@ -50,7 +50,7 @@ ununitall <- unique(data_centroids$Unit) # all Units
 #' hunted in
 huntedunits <- unique(filter(COElkRifleAll, !is.na(Hunters) & Hunters > 0)$Unit)
 ununit <- huntedunits[!huntedunits %in% unique(weatherdata5$Unit)] # Units we don't have weather data for yet
-ununit <-sample(ununit,3,T)
+ununit <-sample(ununit,2,T)
 
 for (iunit in ununit) {
   location <- filter(data_centroids, Unit == iunit)

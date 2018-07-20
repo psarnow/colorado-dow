@@ -3,104 +3,91 @@
 #' author: "Pierre Sarnow"
 #' output:
 #'   html_document:
+#'     toc: true
 #'     fig_width: 10
 #'     df_print: paged
 #' ---
-
-#' # Initial Questions to Explore
-#' I'm wondering how many hunters are in each of the units
-#' I would expect that CPW associates the number of hunters to how many elk are in each unit.
+#' ***
+#' ## Initial Questions to Explore
+#' * I'm wondering how many hunters are in each of the units
+#' * I would expect that CPW associates the number of hunters to how many elk are in each unit.
 #' 
 #' I am also curious to know if the number of hunters has changed from year to year.
 #'
-#' *NOTICE* that I am only looking at the general rifle hunting seasons on public land. There are also
-#' hunters in Archery, Muzzleloader, Private Land, Ranching for Wildlife, etc.
+#' __*NOTICE__ that I am only looking at the general rifle hunting seasons on public land. There are also 
+#' hunters for Archery, Muzzleloader, Private Land, Ranching for Wildlife, etc.*
 #' 
-#' ### Setup
+#' ***
+#' ## Setup
 setwd("~/_code/colorado-dow/Phase I - Descriptive Analytics")
 #' Load required libraries for wrangling data, charting, and mapping
 #+ setup, message=F, warning=F
-library(plyr,quietly = T)
-library(dplyr,quietly = T)
-library(ggplot2, quietly = T)
+library(plyr,quietly = T) # data wrangling
+library(dplyr,quietly = T) # data wrangling
+library(ggplot2, quietly = T) # charting
+library(ggthemes,quietly = T) # so I can add the highcharts theme and palette
+library(scales,quietly = T) # to load the percent function when labeling plots
 #' Set our preferred charting theme
-theme_set(theme_minimal())
+theme_set(theme_minimal()+theme_hc()+theme(legend.key.width = unit(1.5, "cm")))
 #' Run script to get hunter data
-#+ source population, message=F, warning=F
+#+ source_population, message=F, warning=F
 source('~/_code/colorado-dow/datasets/Colorado Elk Harvest Data.R', echo=F)
-#+ setdir, include=FALSE
-setwd("~/_code/colorado-dow/Phase I - Descriptive Analytics")
-
-#' Table of the data
+#' Table of the hunter data
 COElkRifleAll
 
-#' # Statewide Elk Hunters
-#' First lets look at the entire state as a whole
+#+ source_geodata, message=F, warning=F
+source('~/_code/colorado-dow/datasets/Colorado GMUnit and Road data.R', echo=F)
+#' Take a peak at the boundary data
+head(Unitboundaries2)
+
+#' ***
+#' ## Total Elk Harvest
+#' ### Statewide
+# Group seasons
 COElkHuntersStatewide <- summarise(group_by(COElkRifleAll,Year,Unit),
                                    Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T))
-
+# Group Units
 COElkHuntersStatewide <- summarise(group_by(COElkHuntersStatewide,Year),
                                    Hunters = sum(Hunters))
 
 ggplot(COElkHuntersStatewide, aes(Year,Hunters)) +
-  geom_bar(stat="identity") +
+  geom_bar(stat="identity",fill=ggthemes_data$hc$palettes$default[2]) +
   coord_cartesian(ylim = c(120000,160000)) +
   labs(title="Statewide Elk Hunters", caption="source: cpw.state.co.us")
-
-#' At a highpoint in 2006 of ~151000, the number of hunters decreased to a low in 2009 of ~133000. 
+#' > At a highpoint in 2006 of ~151000, the number of hunters decreased to a low in 2009 of ~133000. 
 #' Since 2009 the total number of hunters has slightly increased from year to year.
 #' 
-#' ## Hunters by Unit
+#' ***
+#' 
+#' ### Hunters by Unit
 #' I'd like to know where the hunters are distributed across the state.
 #' 
-#' run script to get unit boundaries so we can draw them on a map
-#+ source hunt units, message=F, warning=F
-source('~/_code/colorado-dow/datasets/coordinate locations of cpw hunt units.R', echo=F)
-#+ setdir1, include=FALSE
-# setwd("~/_code/colorado-dow/Phase I - Descriptive Analytics")
-#' Get a statemap with some roads on it
-#+ roaddata, message=F, warning=F
-roaddata <- rgdal::readOGR("~/_code/colorado-dow/datasets/ne_10m_roads/ne_10m_roads.shp")
-USAroads <- roaddata %>% subset(.,sov_a3 == "USA" & type == "Major Highway")
-# I need to convert to data frames so that I can use the data with ggplot2.
-USAroads <- fortify(USAroads)
-Unitboundaries <- shapefile %>% fortify(region = "GMUID")
-
-Unitboundaries2 <- merge(Unitboundaries, shapefile@data, by.x = 'id', by.y = 'GMUID')
-Unitboundaries2$Unit <- as.character(Unitboundaries2$id)
-
-# get min/max of long/lat for zooming
-longset <- c(min(Unitboundaries2$long),max(Unitboundaries2$long))
-latset <- c(min(Unitboundaries2$lat),max(Unitboundaries2$lat))
-COroads <- filter(USAroads, long > longset[1] & long < longset[2])
-COroads <- filter(COroads, lat > latset[1] & lat < latset[2])
-
-# Hunters in each unit (Combine the seasons)
+# Group seasons
 COElkUnitHunters <- summarise(group_by(COElkRifleAll,Year,Unit),
                               Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T))
-
+#' Last year's data
 Year2017 <- filter(COElkUnitHunters, Year == "2017")
 HunterstoPlot <- left_join(Unitboundaries2,Year2017, by=c("Unit"))
 
-#+ Hunters-Map, fig.width=10, fig.height=7
+#+ Hunters-Map, fig.width=10, fig.height=8.46
 ggplot(HunterstoPlot, aes(long, lat, group = group)) + 
   geom_polygon(aes(fill = Hunters),colour = "grey50", size = .2) + #Unit boundaries
   geom_path(data = COroads,aes(x = long, y = lat, group = group), color="#3878C7",size=2) + #Roads
   geom_text(data=data_centroids,aes(x=longitude,y=latitude,label = Unit),size=3) + #Unit labels
-  scale_fill_distiller(palette = "Oranges",direction = 1,na.value = 'grey') +
-  xlab("") + 
-  ylab("") +
-  theme(panel.background = element_rect(fill='white')) +
-  theme(panel.grid.major= element_blank()) +
-  theme(panel.grid.minor= element_blank()) +
+  scale_fill_distiller(palette = "Oranges",direction = 1,na.value = 'light grey') +
+  xlab("") + ylab("") +
   labs(title="2017 Colorado Elk Hunters", caption="source: cpw.state.co.us")
-
-#' ## Year to Year Hunter Trends
-#' Lets look at the hunter changes from year to year.
-
+#' > TODO - commentary
+#' 
+#' ***
+#' 
+#' ### Year to Year Hunter Trends
+#' Create a png of each year
 icounter <- 0
 for (imap in unique(COElkUnitHunters$Year)){
-  png(file=paste("HuntersMap",imap,".png"), width=1400, height=1000)
+  # Colorado aspect ratio = 1087w x 800h -> 1.35875
+  # Use trial and error to determine which width and height to define for png files that will retain the correct aspect ratio
+  png(file=paste("HuntersMap",imap,".png"), width=948, height=700)
   yearplot <- filter(COElkUnitHunters, Year == imap)
   HunterstoPlot <- left_join(Unitboundaries2,yearplot, by=c("Unit"))
   p1 <- ggplot(HunterstoPlot, aes(long, lat, group = group)) + 
@@ -109,14 +96,9 @@ for (imap in unique(COElkUnitHunters$Year)){
     geom_text(data=data_centroids,aes(x=longitude,y=latitude,label = Unit),size=5) + #Unit labels
     scale_fill_distiller(palette = "Oranges",
                          direction = 1,
-                         na.value = 'grey',
-                         breaks=c(1000,2000,3000,4000,5000,6000,7000),
+                         na.value = 'light grey',
                          limits = c(0,max(COElkUnitHunters$Hunters))) + #fix so each year chart has same color breaks
-    xlab("") + 
-    ylab("") +
-    theme(panel.background = element_rect(fill='white')) +
-    theme(panel.grid.major= element_blank()) +
-    theme(panel.grid.minor= element_blank()) +
+    xlab("") + ylab("") +
     theme(plot.title=element_text(hjust = .5)) +
     theme(plot.subtitle=element_text(hjust = icounter/length(unique(COElkUnitHunters$Year)))) +
     labs(title="Colorado Elk Hunters", subtitle=imap, caption="source: cpw.state.co.us")
@@ -128,14 +110,16 @@ for (imap in unique(COElkUnitHunters$Year)){
 #' Convert the .png files to one .gif file using ImageMagick. 
 system("convert -delay 150 *.png Huntersmap.gif")
 
-#+ cleanup, message=F, warning=F
+#' ![](Huntersmap.gif)
+#' 
+#' > TODO - commentary
+#' 
+#' Remove the .png files
 file.remove(list.files(pattern=".png"))
-
-#' ![Colorado Elk Hunters by Year](Huntersmap.gif)
-
-#' ## Number of Hunters Rank of the Units
+#' ***
+#' ### Number of Hunters Rank of the Units
 #' Would also be beneficial to rank each unit so I can reference later. In this case
-#' I might average the number of hunters of the last few years since each year isn't consistent
+#' average the number of hunters of the last few years
 HunterRanklast3 <- filter(COElkUnitHunters, as.numeric(Year) >= 2015)
 HunterRanklast3 <- summarise(group_by(HunterRanklast3,Unit),
                                  Hunters = mean(Hunters,na.rm = T))
@@ -154,12 +138,13 @@ ggplot(HunterRanklast3, aes(x=Unit, y=Hunters)) +
                    y=0, 
                    yend=Hunters)) + 
   labs(title="Average Elk Hunters 2015-2017\nTop 50 Units", subtitle="Hunters by Unit", caption="source: cpw.state.co.us")
-
+#' > TODO - commentary
+#' 
+#' ***
 #' ## Conclusion
-#' Its interesting that some of these units with high amount of hunters doesn't seem to coincide with
+#' > Its interesting that some of these units with high amount of hunters doesn't seem to coincide with
 #' how many elk are in those units. The Northwestern herd seems to have the most amount of hunters,
 #' but our last report indicated that units with more elk in them were in the South and Southwest.
 #' 
-#' Lets investigate that further. Is there a correlation of number of hunters to number of elk in each
+#' > Lets investigate that further. Is there a correlation of number of hunters to number of elk in each
 #' unit?  If not, I would certainly be interested in which units have the highest ratio of Elk to Hunters
-
