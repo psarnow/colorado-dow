@@ -14,7 +14,7 @@
 #' 
 #' I am also curious to know if the number of hunters has changed from year to year.
 #'
-#' __*NOTICE__ that I am only looking at the general rifle hunting seasons on public land. There are also 
+#' *__NOTICE__ that I am only looking at the general rifle hunting seasons on public land. There are also 
 #' hunters for Archery, Muzzleloader, Private Land, Ranching for Wildlife, etc.*
 #' 
 #' ***
@@ -39,7 +39,6 @@ COElkRifleAll
 source('~/_code/colorado-dow/datasets/Colorado GMUnit and Road data.R', echo=F)
 #' Take a peak at the boundary data
 head(Unitboundaries2)
-
 #' ***
 #' ## Total Elk Harvest
 #' ### Statewide

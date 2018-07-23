@@ -4,7 +4,7 @@
 #' ---
 
 #' ## Description
-#' Colorado Parks and Wildlife (CPW) aka Colorado Department of Wildlife (CDOW)
+#' Colorado Parks and Wildlife (CPW)
 #' provides historical statistics on Big Game Draw Results. The 'Draw' is the application process
 #' that CPW utilizes. Altogether it is rather complex when you consider all of the possible options,
 #' but here we will initially limit the analysis to the general hunt seasons, and combine

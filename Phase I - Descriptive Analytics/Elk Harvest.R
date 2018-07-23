@@ -15,11 +15,11 @@
 #' 
 #' Will want to view all elk, antlered, antlerless, and the ratio of each for insights into these questions.
 #'
-#' *NOTICE* that I am only looking at the general rifle hunting seasons on public land. There are also
-#' Harvest for Archery, Muzzleloader, Private Land, Ranching for Wildlife, etc.
+#' *__NOTICE__ that I am only looking at the general rifle hunting seasons on public land. There are also 
+#' hunters for Archery, Muzzleloader, Private Land, Ranching for Wildlife, etc.*
 #' 
 #' ***
-#' ### Setup
+#' ## Setup
 setwd("~/_code/colorado-dow/Phase I - Descriptive Analytics")
 #' Load required libraries for wrangling data, charting, and mapping
 #+ setup, message=F, warning=F
@@ -31,7 +31,7 @@ library(scales,quietly = T) # to load the percent function when labeling plots
 #' Set our preferred charting theme
 theme_set(theme_minimal()+theme_hc()+theme(legend.key.width = unit(1.5, "cm")))
 #' Run script to get harvest data
-#+ source_population, message=F, warning=F
+#+ source_harvest, message=F, warning=F
 source('~/_code/colorado-dow/datasets/Colorado Elk Harvest Data.R', echo=F)
 
 #' Table of the harvest data
@@ -59,7 +59,6 @@ ggplot(COElkHarvestStatewide, aes(Year,Harvest)) +
 #' > TODO commentary
 #' 
 #' ***
-#' 
 #' ### Harvest by Unit
 #' How the Harvest is distributed across the state.
 #' 
