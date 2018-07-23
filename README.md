@@ -20,17 +20,15 @@ Its also important to note that data modelers have a sense of what they are mode
 
 ## Setup -- Data Acquisition
 CPW provides a lot of info for hunters to sift through.  Let's start by accessing what they provide.
-* [Elk hunting statistics from CPW](http://rpubs.com/psarnow/404268)
+* [Elk harvest data from CPW](http://rpubs.com/psarnow/404268)
 
-* [Hunt Draw summaries from CPW](http://rpubs.com/psarnow/394721)
+* [Colorado elk population estimates from CPW](http://rpubs.com/psarnow/393560)
 
-* [Herd population estimates from CPW](http://rpubs.com/psarnow/393560)
+* [Hunt draw summaries from CPW](http://rpubs.com/psarnow/394721)
 
 * [Hunt season dates from CPW](http://rpubs.com/psarnow/393655)
 
-* [Coordinate locations of the CPW hunt units](http://rpubs.com/psarnow/393672)
-
-* [CPW hunt unit boundaries and major highways](http://rpubs.com/psarnow/405816)
+* [CPW hunt unit boundaries and major highways for mapping](http://rpubs.com/psarnow/405816)
 
 Additionally, weather can play a large role in hunting success. Let's grab some historical data from Dark Sky using their API
 * [Weather from Dark Sky](http://rpubs.com/psarnow/393658)
