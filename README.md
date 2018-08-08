@@ -62,9 +62,13 @@ Are there other factors to consider?
 **Goal** What makes the first season in Unit 77 have the most hunter success? Why does it take less effort (hunting days) to be successful in the first season of Unit 77?
 
 ## Phase III -- Predictive Analytics (What will happen)
-* Preprocessing and data transformations
+Use machine learning and predictive modeling to forcast future hunt seasons. 
+* I will utilize Preprocessing and data transformations
 * Model building / tuning / training
 * Model testing
+* Release web service to analyze new data
+
+Begin with using historical data to predict Elk populations. I will then be able to use that data to predict CPW draw results, and harvest results.
 
 ## Phase IV -- Prescriptive Analytics (How can we make it happen)
 What can we influence? This is probably something CPW performs for future year’s regulations.
