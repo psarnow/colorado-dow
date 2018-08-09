@@ -26,7 +26,7 @@ library(scales,quietly = T) # to load the percent function when labeling plots
 theme_set(theme_minimal()+theme_hc()+theme(legend.key.width = unit(1.5, "cm")))
 #' Run script to get elk population data
 #+ source_population, message=F, warning=F
-source('~/_code/colorado-dow/datasets/read colorado dow population estimates.R', echo=F)
+source('~/_code/colorado-dow/datasets/Colorado Elk Population Estimates.R', echo=F)
 
 #' Table of the elk herd data
 COElkPopulationAll

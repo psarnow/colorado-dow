@@ -11,8 +11,8 @@
 #' ## Initial Questions to Explore
 #' * TODO
 #' #'
-#' *NOTICE* that I am only looking at the general rifle hunting seasons on public land. There are also
-#' Harvest in Archery, Muzzleloader, Private Land, Ranching for Wildlife, etc.
+#' *__NOTICE__ that I am only looking at the general rifle hunting seasons on public land. There are also 
+#' hunters for Archery, Muzzleloader, Private Land, Ranching for Wildlife, etc.*
 #' 
 #' ***
 #' ### Setup
@@ -25,7 +25,7 @@ library(ggplot2, quietly = T) # charting
 library(ggthemes,quietly = T) # so I can add the highcharts theme and palette
 library(scales,quietly = T) # to load the percent function when labeling plots
 #' Set our preferred charting theme
-theme_set(theme_minimal()+theme_hc())
+theme_set(theme_minimal()+theme_hc()+theme(legend.key.width = unit(1.5, "cm")))
 #' Run script to get harvest data
 #+ source_population, message=F, warning=F
 source('~/_code/colorado-dow/datasets/Colorado Elk Harvest Data.R', echo=F)

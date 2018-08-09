@@ -10,6 +10,7 @@
 #' ***
 #' ## Initial Questions to Explore
 #' * How difficult is it to get a license for each unit and season?
+#' * How difficult is it to get a license for each elk type per unit season?
 #' 
 #' *__NOTICE__ that I am only looking at the general rifle hunting seasons on public land. There are also 
 #' hunters for Archery, Muzzleloader, Private Land, Ranching for Wildlife, etc.*
@@ -32,6 +33,8 @@ source('~/_code/colorado-dow/datasets/Elk Drawing Summaries.R', echo=F)
 
 #' Table of the data
 COElkDrawAll2
+
+test <- left_join(COElkRifleAll,COElkDrawAll)
 
 #+ source_geodata, message=F, warning=F
 source('~/_code/colorado-dow/datasets/Colorado GMUnit and Road data.R', echo=F)
@@ -215,6 +218,101 @@ ggplot(DrawSuccessRanklast3, aes(x=Unit, y=Draw_Success)) +
 #' > TODO - commentary
 #' 
 #' ***
+#' ## License for each elk type per unit season
+#' # Will need to determine if the hunter needed to draw, or acquire an over-the-counter license
+#' 
+#' # Join COElkRifleAll, and COElkDrawAll
+Licenses <- left_join(COElkRifleAll,COElkDrawAll)
+Licenses$Chcs_Drawn.Antlered <- NA
+Licenses$Chcs_Drawn.Antlered[Licenses$Sex == "Bull" & !is.na(Licenses$Chcs_Drawn)] <- Licenses$Chcs_Drawn[Licenses$Sex == "Bull" & !is.na(Licenses$Chcs_Drawn)]
+Licenses$Chcs_Drawn.Antlerless <- NA
+Licenses$Chcs_Drawn.Antlerless[Licenses$Sex == "Cow" & !is.na(Licenses$Chcs_Drawn)] <- Licenses$Chcs_Drawn[Licenses$Sex == "Cow" & !is.na(Licenses$Chcs_Drawn)]
+Licenses$Chcs_Drawn.Either <- NA
+Licenses$Chcs_Drawn.Either[Licenses$Sex == "Either" & !is.na(Licenses$Chcs_Drawn)] <- Licenses$Chcs_Drawn[Licenses$Sex == "Either" & !is.na(Licenses$Chcs_Drawn)]
+
+#' # For the units that are combined in limited draws, will need to split the draw up using the 
+#' # same ratio of hunters in each of those units
+#' 
+# List of units that are combined in hunt codes
+listnames <- c("77","64","NA")
+list1 <- c("77","78","771")
+list2 <- c("64","65","NA")
+list3 <- c("57","58","NA")
+list4 <- c("7","8","NA")
+list5 <- c("28","37","NA")
+list6 <- c("69","84","NA")
+list7 <- c("59","581","NA")
+list7 <- c("86","691","861")
+
+CombinedUnits <- data.frame(list1,list2,list3,list4,list5,list6,list7)
+uniquecombined <- colnames(CombinedUnits)
+UnitSpreadAll <- NULL
+for (iunit in uniquecombined) { 
+  Units <- CombinedUnits[c(iunit)]
+  UnitSpread <- Licenses[Licenses$Unit %in% as.character(levels(Units[1,])),]
+  
+  UnitSpread <- mutate(group_by(UnitSpread,Year, Season),
+                       Unit_Spread.Antlered = Hunters.Antlered / sum(Hunters.Antlered,na.rm = T),
+                       Unit_Spread.Antlerless = Hunters.Antlerless / sum(Hunters.Antlerless,na.rm = T),
+                       Unit_Spread.Either = Hunters.Either / sum(Hunters.Either,na.rm = T),
+                       Chcs_Drawn.Antlered = round(Unit_Spread.Antlered * max(Chcs_Drawn.Antlered,na.rm = T),0),
+                       Chcs_Drawn.Antlerless = round(Unit_Spread.Antlerless * max(Chcs_Drawn.Antlerless,na.rm = T),0),
+                       Chcs_Drawn.Either = round(Unit_Spread.Either * max(Chcs_Drawn.Either,na.rm = T),0)
+  )
+  # I bet there is a function that does this.. for now we'll use manual indexing
+  UnitSpread$Chcs_Drawn.Spread <- NA
+  UnitSpread$Chcs_Drawn.Spread[!is.na(UnitSpread$Chcs_Drawn.Antlered)] <- UnitSpread$Chcs_Drawn.Antlered[!is.na(UnitSpread$Chcs_Drawn.Antlered)] 
+  UnitSpread$Chcs_Drawn.Spread[!is.na(UnitSpread$Chcs_Drawn.Antlerless)] <- UnitSpread$Chcs_Drawn.Antlerless[!is.na(UnitSpread$Chcs_Drawn.Antlerless)] 
+  UnitSpread$Chcs_Drawn.Spread[!is.na(UnitSpread$Chcs_Drawn.Either)] <- UnitSpread$Chcs_Drawn.Either[!is.na(UnitSpread$Chcs_Drawn.Either)] 
+  
+  UnitSpread$Unit_Spread <- NA
+  UnitSpread$Unit_Spread[!is.na(UnitSpread$Unit_Spread.Antlered)] <- UnitSpread$Unit_Spread.Antlered[!is.na(UnitSpread$Unit_Spread.Antlered)] 
+  UnitSpread$Unit_Spread[!is.na(UnitSpread$Unit_Spread.Antlerless)] <- UnitSpread$Unit_Spread.Antlerless[!is.na(UnitSpread$Unit_Spread.Antlerless)] 
+  UnitSpread$Unit_Spread[!is.na(UnitSpread$Unit_Spread.Either)] <- UnitSpread$Unit_Spread.Either[!is.na(UnitSpread$Unit_Spread.Either)] 
+  
+  UnitSpread <- select(UnitSpread, -Chcs_Drawn.Antlered:-Unit_Spread.Either)
+  UnitSpread$Sex1 <- substring(UnitSpread$HuntCode, 2, 2)
+
+  UnitSpread <- mutate(group_by(UnitSpread,Year, Season,Sex1),
+                 Draw_Success.Spread = max(Draw_Success,na.rm=T))
+
+  # Combine
+  UnitSpreadAll <- rbind(UnitSpreadAll,UnitSpread)
+}
+UnitSpreadAll <- select(ungroup(UnitSpreadAll), -Sex1)
+UnitSpreadAll$Chcs_Drawn.Spread[is.infinite(UnitSpreadAll$Chcs_Drawn.Spread)] <- NA
+UnitSpreadAll$Draw_Success.Spread[is.infinite(UnitSpreadAll$Draw_Success.Spread)] <- NA
+
+
+# Combine spead units with all of the rest.... filter out spread units
+Licenses1 <- Licenses[!Licenses$Unit %in% as.character(levels(unlist(CombinedUnits))),]
+
+Licenses2 <- rbind.fill(Licenses1,UnitSpreadAll)
+
+#' Identify license type (Limited Draw, or Over the Counter (OTC))
+Licenses2$License <- NA
+Licenses2$License[(!is.na(Licenses2$Chcs_Drawn) | !is.na(Licenses2$Chcs_Drawn.Spread))] <- "Draw"
+Licenses2$License[(is.na(Licenses2$Chcs_Drawn) & is.na(Licenses2$Chcs_Drawn.Spread))] <- "OTC"
+
+#' Overall Success = LicenseSuccess * Hunter Success
+Licenses2$Draw_Success[Licenses2$Draw_Success>1] <- 1
+Licenses2$Draw_Success.Spread[Licenses2$Draw_Success.Spread>1] <- 1
+Licenses2$Draw_Success.Spread[is.infinite(Licenses2$Draw_Success.Spread)] <- NA
+
+OverallSuccess <- summarise(group_by(Licenses2,Year, Unit, Season, HuntCode, License),
+                            Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T),
+                            Harvest = sum(c(Harvest.Antlered,Harvest.Antlerless),na.rm = T),
+                            HuntSuccess = Harvest / Hunters,
+                            LicenseSuccess = mean(c(Draw_Success,Draw_Success.Spread),na.rm = T))
+
+OverallSuccess$LicenseSuccess[OverallSuccess$License == "OTC"] <- 1
+OverallSuccess <- mutate(group_by(OverallSuccess,Year, Unit, Season),
+                            OverallSuccess = HuntSuccess * LicenseSuccess)
 #' ## Conclusion
 #' > How about breakdowns for each sex? Bull, Cow, Either. 
 #' > What about seeing these for Hunters, Success, Draw, etc
+#' This needs some refinements.  A few things come to mind...
+#' Some units are combined (77,78,771), 771 doesn't have its own license.
+#' Also, draw results don't include over the counter licenses... I think I can determine 
+#' how many hunters are using that license based on the harvest tables (where I combined
+#' Limited Seasons 'Draw', and success rates 'OTC'?)

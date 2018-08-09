@@ -189,7 +189,7 @@ for (iyear in years) {
   COElkDraw4 <- select(COElkDraw4, -Type)
   
   #Drop HuntCode
-  COElkDraw4 <- select(COElkDraw4, -HuntCode)
+  # COElkDraw4 <- select(COElkDraw4, -HuntCode)
   
   #Clean up field classes
   COElkDraw4$Orig_Quota <- as.numeric(COElkDraw4$Orig_Quota)
@@ -198,106 +198,108 @@ for (iyear in years) {
   
   # Split select units into multiple (hunt codes were spread across units)
   # assume even spread. Only referencing the 2018 Big Game Brochure...
+  # NO, can't split in this fashion, because some units will have a higher number of reported hunters than there
+  # licenses for.... so the split will need to reference the hunter/harvest table before being split!
   # TODO - read Big Game Brochures for actual unit spreads
-  # Units 77, 771, 78
-  if (!any(COElkDraw4$Unit == "771" | COElkDraw4$Unit == "78")) {
-    UnitSpread <- filter(COElkDraw4, Unit == "77")
-    COElkDraw4 <- filter(COElkDraw4, Unit != "77")
-    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 3
-    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 3
-    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 3
-    UnitSpread1 <- UnitSpread
-    UnitSpread2 <- UnitSpread
-    UnitSpread1$Unit <- "771"
-    UnitSpread2$Unit <- "78"
-    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1,UnitSpread2)
-  }
-  
-  # Units 64, 65
-  if (!any(COElkDraw4$Unit == "65")) {
-    UnitSpread <- filter(COElkDraw4, Unit == "64")
-    COElkDraw4 <- filter(COElkDraw4, Unit != "64")
-    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
-    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
-    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
-    UnitSpread1 <- UnitSpread
-    UnitSpread1$Unit <- "65"
-    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
-  }
-  
-  # Units 57, 58
-  if (!any(COElkDraw4$Unit == "58")) {
-    UnitSpread <- filter(COElkDraw4, Unit == "57")
-    COElkDraw4 <- filter(COElkDraw4, Unit != "57")
-    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
-    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
-    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
-    UnitSpread1 <- UnitSpread
-    UnitSpread1$Unit <- "58"
-    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
-  }
-  
-  # Units 7, 8
-  if (!any(COElkDraw4$Unit == "8")) {
-    UnitSpread <- filter(COElkDraw4, Unit == "7")
-    COElkDraw4 <- filter(COElkDraw4, Unit != "7")
-    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
-    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
-    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
-    UnitSpread1 <- UnitSpread
-    UnitSpread1$Unit <- "8"
-    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
-  }
-  
-  # Units 28, 37
-  if (!any(COElkDraw4$Unit == "37")) {
-    UnitSpread <- filter(COElkDraw4, Unit == "28")
-    COElkDraw4 <- filter(COElkDraw4, Unit != "28")
-    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
-    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
-    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
-    UnitSpread1 <- UnitSpread
-    UnitSpread1$Unit <- "37"
-    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
-  }
-  
-  # Units 69, 84
-  if (!any(COElkDraw4$Unit == "84")) {
-    UnitSpread <- filter(COElkDraw4, Unit == "69")
-    COElkDraw4 <- filter(COElkDraw4, Unit != "69")
-    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
-    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
-    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
-    UnitSpread1 <- UnitSpread
-    UnitSpread1$Unit <- "84"
-    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
-  }
-  
-  # Units 59, 581
-  if (!any(COElkDraw4$Unit == "581")) {
-    UnitSpread <- filter(COElkDraw4, Unit == "59")
-    COElkDraw4 <- filter(COElkDraw4, Unit != "59")
-    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
-    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
-    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
-    UnitSpread1 <- UnitSpread
-    UnitSpread1$Unit <- "581"
-    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
-  }
-  
-  # Units 86, 691, 861
-  if (!any(COElkDraw4$Unit == "691" | COElkDraw4$Unit == "861")) {
-    UnitSpread <- filter(COElkDraw4, Unit == "86")
-    COElkDraw4 <- filter(COElkDraw4, Unit != "86")
-    UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 3
-    UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 3
-    UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 3
-    UnitSpread1 <- UnitSpread
-    UnitSpread2 <- UnitSpread
-    UnitSpread1$Unit <- "691"
-    UnitSpread2$Unit <- "861"
-    COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1,UnitSpread2)
-  }
+  # # Units 77, 771, 78
+  # if (!any(COElkDraw4$Unit == "771" | COElkDraw4$Unit == "78")) {
+  #   UnitSpread <- filter(COElkDraw4, Unit == "77")
+  #   COElkDraw4 <- filter(COElkDraw4, Unit != "77")
+  #   UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 3
+  #   UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 3
+  #   UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 3
+  #   UnitSpread1 <- UnitSpread
+  #   UnitSpread2 <- UnitSpread
+  #   UnitSpread1$Unit <- "771"
+  #   UnitSpread2$Unit <- "78"
+  #   COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1,UnitSpread2)
+  # }
+  # 
+  # # Units 64, 65
+  # if (!any(COElkDraw4$Unit == "65")) {
+  #   UnitSpread <- filter(COElkDraw4, Unit == "64")
+  #   COElkDraw4 <- filter(COElkDraw4, Unit != "64")
+  #   UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
+  #   UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
+  #   UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
+  #   UnitSpread1 <- UnitSpread
+  #   UnitSpread1$Unit <- "65"
+  #   COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  # }
+  # 
+  # # Units 57, 58
+  # if (!any(COElkDraw4$Unit == "58")) {
+  #   UnitSpread <- filter(COElkDraw4, Unit == "57")
+  #   COElkDraw4 <- filter(COElkDraw4, Unit != "57")
+  #   UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
+  #   UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
+  #   UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
+  #   UnitSpread1 <- UnitSpread
+  #   UnitSpread1$Unit <- "58"
+  #   COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  # }
+  # 
+  # # Units 7, 8
+  # if (!any(COElkDraw4$Unit == "8")) {
+  #   UnitSpread <- filter(COElkDraw4, Unit == "7")
+  #   COElkDraw4 <- filter(COElkDraw4, Unit != "7")
+  #   UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
+  #   UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
+  #   UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
+  #   UnitSpread1 <- UnitSpread
+  #   UnitSpread1$Unit <- "8"
+  #   COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  # }
+  # 
+  # # Units 28, 37
+  # if (!any(COElkDraw4$Unit == "37")) {
+  #   UnitSpread <- filter(COElkDraw4, Unit == "28")
+  #   COElkDraw4 <- filter(COElkDraw4, Unit != "28")
+  #   UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
+  #   UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
+  #   UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
+  #   UnitSpread1 <- UnitSpread
+  #   UnitSpread1$Unit <- "37"
+  #   COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  # }
+  # 
+  # # Units 69, 84
+  # if (!any(COElkDraw4$Unit == "84")) {
+  #   UnitSpread <- filter(COElkDraw4, Unit == "69")
+  #   COElkDraw4 <- filter(COElkDraw4, Unit != "69")
+  #   UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
+  #   UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
+  #   UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
+  #   UnitSpread1 <- UnitSpread
+  #   UnitSpread1$Unit <- "84"
+  #   COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  # }
+  # 
+  # # Units 59, 581
+  # if (!any(COElkDraw4$Unit == "581")) {
+  #   UnitSpread <- filter(COElkDraw4, Unit == "59")
+  #   COElkDraw4 <- filter(COElkDraw4, Unit != "59")
+  #   UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 2
+  #   UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 2
+  #   UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 2
+  #   UnitSpread1 <- UnitSpread
+  #   UnitSpread1$Unit <- "581"
+  #   COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1)
+  # }
+  # 
+  # # Units 86, 691, 861
+  # if (!any(COElkDraw4$Unit == "691" | COElkDraw4$Unit == "861")) {
+  #   UnitSpread <- filter(COElkDraw4, Unit == "86")
+  #   COElkDraw4 <- filter(COElkDraw4, Unit != "86")
+  #   UnitSpread$Orig_Quota <- UnitSpread$Orig_Quota / 3
+  #   UnitSpread$Ttl_Chce_1 <- UnitSpread$Ttl_Chce_1 / 3
+  #   UnitSpread$Chcs_Drawn <- UnitSpread$Chcs_Drawn / 3
+  #   UnitSpread1 <- UnitSpread
+  #   UnitSpread2 <- UnitSpread
+  #   UnitSpread1$Unit <- "691"
+  #   UnitSpread2$Unit <- "861"
+  #   COElkDraw4 <- bind_rows(COElkDraw4, UnitSpread,UnitSpread1,UnitSpread2)
+  # }
   
   #Combine
   COElkDraw4$Year <- as.character(iyear)
