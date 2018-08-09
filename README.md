@@ -68,7 +68,7 @@ Use machine learning and predictive modeling to forcast future hunt seasons.
 * Model testing
 * Release web service to analyze new data
 
-Begin with using historical data to predict Elk populations. I will then be able to use that data to predict CPW draw results, and harvest results.
+Begin with using historical data and forecasted weather to predict Elk Harvest. I will then be able to use that data to predict Population and other hunt results.
 
 ## Phase IV -- Prescriptive Analytics (How can we make it happen)
 What can we influence? This is probably something CPW performs for future year’s regulations.
