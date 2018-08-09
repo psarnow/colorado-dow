@@ -73,15 +73,19 @@ UnitWeather <- summarise(group_by(weatherdata5,Year,Unit),
                          daily.windSpeed = mean(daily.windSpeed,na.rm = T),
                          daily.FullmoonPhase = mean(daily.FullmoonPhase,na.rm = T))
 
-UnitWeather <- subset(UnitWeather, !is.na(daily.temperatureHigh))
-
+#' Appropriate field classes for model training
+UnitWeather$Year <- as.numeric(UnitWeather$Year)
+# UnitWeather$Unit <- as.factor(UnitWeather$Unit)
+COElkPopulationAll$Year <- as.numeric(COElkPopulationAll$Year)
+# COElkPopulationAll$Unit <- as.factor(COElkPopulationAll$Unit)
 #' Join Population and weather data
-COElkPopulation <- left_join(COElkPopulationAll, UnitWeather, by = c("Year","Unit"))
+COElkPopulation <- full_join(COElkPopulationAll, UnitWeather, by = c("Year","Unit"))
 
 #' Group Harvest data by Year and Unit
 COElkHarvest <- summarise(group_by(COElkRifleAll,Year,Unit),
                           Harvest = sum(c(Harvest.Antlered,Harvest.Antlerless),na.rm = T))
-
+COElkHarvest$Year <- as.numeric(COElkHarvest$Year)
+# COElkHarvest$Unit <- as.factor(COElkHarvest$Unit)
 #' Add dummy variables... previous year's Population, previous year's Harvest
 #' The first year of data, won't have anything..oh, but it will if we add the vars before
 #' mergining in the weatherdata
@@ -89,23 +93,21 @@ COElkHarvest <- summarise(group_by(COElkRifleAll,Year,Unit),
 #' Join in Harvest data
 COElkPopulation <- left_join(COElkPopulation, COElkHarvest, by = c("Year","Unit"))
 
-#' Remove rows with missing data
-COElkPopulation <- filter(COElkPopulation, !is.na(Harvest) & !is.na(Population.Unit) & !is.na(daily.temperatureMean))
-COElkPopulation <- select(COElkPopulation,-DAU,-Population.DAU,-Bull_Ratio,-Num_GMUnits)
-
-#' Appropriate field classes for model training
-COElkPopulation$Year <- as.numeric(COElkPopulation$Year)
 COElkPopulation$Unit <- as.factor(COElkPopulation$Unit)
+COElkPopulation2018 <- filter(COElkPopulation, Year == 2018)
 
+#' Remove rows with missing data
+COElkPopulation <- filter(COElkPopulation, !is.na(Harvest) & !is.na(Population.Unit) & !is.na(daily.temperatureMean) & Year != 2018)
+COElkPopulation <- select(COElkPopulation,-DAU,-Population.DAU,-Bull_Ratio,-Num_GMUnits)
+COElkPopulation$Unit <- as.character(COElkPopulation$Unit)
 #' 
 #' Split into train and test sets.. this is a time series dataset (years).
 #' Consider using createTimeSlices
 
 #' Do we need to organize this per unit? train a model for each unit?
 
-traindata <- filter(COElkPopulation, Year != 2017)
-testdata <- filter(COElkPopulation, Year == 2017)
-data_index <- createDataPartition(COElkPopulation$Year, p = .75, list = FALSE)
+# traindata <- filter(COElkPopulation, Year != 2017)
+# testdata <- filter(COElkPopulation, Year == 2017)
 
 data_index <- sample(1:nrow(COElkPopulation),size = .75*nrow(COElkPopulation),replace = F)
 traindata <- COElkPopulation[ data_index, ]
@@ -124,20 +126,64 @@ fitControl <- trainControl(
   allowParallel = TRUE,
   summaryFunction = defaultSummary)
 
-methodFit = train(Population.Unit ~ ., data = traindata,
+HarvestModel = train(Harvest ~ ., data = select(traindata,-Population.Unit),
+                  method = "svmRadial", #svmRadial
+                  # preProc = c("center", "scale"), 
+                  tuneLength = 10,
+                  #tuneGrid = svmTuneGrid,
+                  trControl = fitControl)
+
+HarvestModel
+
+#' Important predictors
+ImpPred <- varImp(HarvestModel,scale = T)
+
+# check performance
+predictdata <- predict(HarvestModel, testdata)
+
+postResample(pred = predictdata, obs = testdata$Harvest)
+#include UnitPopulations. svmRadial RMSE=57
+
+#' Chart performance of predicted
+chartperformance <- data.frame(predicted = predictdata, observed = testdata$Harvest)
+
+ggplot(chartperformance, aes(predicted,observed)) +
+  geom_point() +
+  labs(title="Performance of Harvest Prediction", caption="source: cpw.state.co.us")
+
+FinalHarvestmodel = train(Harvest ~ ., data = select(COElkPopulation,-Population.Unit),
+                   method = "svmRadial",
+                   # preProc = c("center", "scale"), 
+                   tuneLength = 10,
+                   #tuneGrid = svmTuneGrid,
+                   trControl = fitControl)
+
+FinalHarvestmodel
+
+#' Important predictors
+ImpPred <- varImp(FinalHarvestmodel,scale = T)
+
+#' Use the forecasted weather data, and the trained model to predict the harvest for 2018
+test <- COElkPopulation2018[, colnames(COElkPopulation2018) %in% c("Unit",FinalHarvestmodel$coefnames)]
+
+test$Harvest <- predict(FinalHarvestmodel, test)
+
+
+#' ***
+PopModel = train(Population.Unit ~ ., data = traindata,
                   method = "svmRadial",
                   # preProc = c("center", "scale"), 
                   tuneLength = 10,
                   #tuneGrid = svmTuneGrid,
                   trControl = fitControl)
 
-methodFit
+PopModel
 
 #' Important predictors
-ImpPred <- varImp(methodFit,scale = T)
+ImpPred <- varImp(PopModel,scale = T)
 
 # check performance
-predictdata <- predict(methodFit, testdata)
+predictdata <- predict(PopModel, testdata)
 
 postResample(pred = predictdata, obs = testdata$Population.Unit)
 
