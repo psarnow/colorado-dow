@@ -43,6 +43,8 @@ Additionally, weather can play a large role in hunting success. Let's grab some 
 
 * [Where are the elk harvested at in Colorado?](http://rpubs.com/psarnow/405573)
 
+* [What kind of elk are harvested?](http://rpubs.com/psarnow/406784)
+
 * [Which units have higher Elk to Hunter ratios?](http://rpubs.com/psarnow/396916)
 
 * [Which units have higher Hunter Success Rates?](http://rpubs.com/psarnow/397169)
@@ -60,9 +62,13 @@ Are there other factors to consider?
 **Goal** What makes the first season in Unit 77 have the most hunter success? Why does it take less effort (hunting days) to be successful in the first season of Unit 77?
 
 ## Phase III -- Predictive Analytics (What will happen)
-* Preprocessing and data transformations
+Use machine learning and predictive modeling to forcast future hunt seasons. 
+* I will utilize Preprocessing and data transformations
 * Model building / tuning / training
 * Model testing
+* Release web service to analyze new data
+
+Begin with using historical data and forecasted weather to predict Elk Harvest. I will then be able to use that data to predict Population and other hunt results.
 
 ## Phase IV -- Prescriptive Analytics (How can we make it happen)
 What can we influence? This is probably something CPW performs for future year’s regulations.
