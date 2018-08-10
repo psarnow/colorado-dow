@@ -69,13 +69,13 @@ Use machine learning and predictive modeling to forcast future hunt seasons.
 * Release web service to analyze new data
 
 1. Predict the number of hunters in each unit, then their breakdowns per season.
-  + Inputs could include Draw Results, historic transportation and lodging costs, median incomes, unemployment rates
+    + Inputs could include Draw Results, historic transportation and lodging costs, median incomes, unemployment rates
 2. Predict the harvest in each unit, then their breakdowns per season.
-  + Input predicted number of hunters
-  + Additional inputs could include forecasted weather
+    + Input predicted number of hunters
+    + Additional inputs could include forecasted weather
 3. Predict the post hunt elk population
-  + Input predicted harvest results
-  + Additional inputs could include forecasted weather
+    + Input predicted harvest results
+    + Additional inputs could include forecasted weather
 4. Use predicted values to generate success stats, etc
 
 ## Phase IV -- Prescriptive Analytics (How can we make it happen)
