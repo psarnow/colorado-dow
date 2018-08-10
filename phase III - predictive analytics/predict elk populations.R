@@ -95,6 +95,7 @@ COElkPopulation <- left_join(COElkPopulation, COElkHarvest, by = c("Year","Unit"
 
 COElkPopulation$Unit <- as.factor(COElkPopulation$Unit)
 COElkPopulation2018 <- filter(COElkPopulation, Year == 2018)
+COElkPopulation2018$Unit <- as.character(COElkPopulation2018$Unit)
 
 #' Remove rows with missing data
 COElkPopulation <- filter(COElkPopulation, !is.na(Harvest) & !is.na(Population.Unit) & !is.na(daily.temperatureMean) & Year != 2018)
@@ -165,7 +166,11 @@ ImpPred <- varImp(FinalHarvestmodel,scale = T)
 
 #' Use the forecasted weather data, and the trained model to predict the harvest for 2018
 test <- COElkPopulation2018[, colnames(COElkPopulation2018) %in% c("Unit",FinalHarvestmodel$coefnames)]
+testnames <- colnames(select(COElkPopulation,-Population.Unit))
+test <- COElkPopulation2018[, colnames(COElkPopulation2018) %in% testnames]
 
+test <- select(test, -Harvest)
+test$Unit <- factor(test$Unit, levels = levels(as.factor(COElkPopulation2018$Unit)))
 test$Harvest <- predict(FinalHarvestmodel, test)
 
 
