@@ -63,12 +63,20 @@ Are there other factors to consider?
 
 ## Phase III -- Predictive Analytics (What will happen)
 Use machine learning and predictive modeling to forcast future hunt seasons. 
-* I will utilize Preprocessing and data transformations
+* I will perform preprocessing and data transformations
 * Model building / tuning / training
 * Model testing
 * Release web service to analyze new data
 
-Begin with using historical data and forecasted weather to predict Elk Harvest. I will then be able to use that data to predict Population and other hunt results.
+1. Predict the number of hunters in each unit, then their breakdowns per season.
+  + Inputs could include Draw Results, historic transportation and lodging costs, median incomes, unemployment rates
+2. Predict the harvest in each unit, then their breakdowns per season.
+  + Input predicted number of hunters
+  + Additional inputs could include forecasted weather
+3. Predict the post hunt elk population
+  + Input predicted harvest results
+  + Additional inputs could include forecasted weather
+4. Use predicted values to generate success stats, etc
 
 ## Phase IV -- Prescriptive Analytics (How can we make it happen)
 What can we influence? This is probably something CPW performs for future year’s regulations.
