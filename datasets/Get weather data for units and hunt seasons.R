@@ -97,7 +97,7 @@ for (iunit in ununit) {
   weatherdata5$daily.precipAccumulation[is.na(weatherdata5$daily.precipAccumulation)] <- 0
   
   # Add new moonphase field, percent full
-  weatherdata5$daily.FullmoonPhase <- rescale(abs(weatherdata5$daily.moonPhase - 0.5), from = c(.5,0), to = c(0,1))
+  weatherdata5$daily.FullmoonPhase <- scales::rescale(abs(weatherdata5$daily.moonPhase - 0.5), from = c(.5,0), to = c(0,1))
 
   # Average temp field
   weatherdata5 <- mutate(group_by(weatherdata5,Year,Season, Unit),

@@ -77,19 +77,12 @@ COElkHunters <- left_join(COElkHunters, COElkDraw, by = c("Year","Unit"))
 COElkHunters$Drawn[is.na(COElkHunters$Drawn)] <- 0
 COElkHunters$Quota[is.na(COElkHunters$Quota)] <- 0
 
-#' Split into train and test sets.. this is a time series dataset (years).
-#' Consider using createTimeSlices
-
-#' Do we need to organize this per unit? train a model for each unit?
-# traindata <- filter(COElkPopulation, Year != 2017)
-# testdata <- filter(COElkPopulation, Year == 2017)
-
+#' Split into train and test sets will use 75% of the data to train on
 data_index <- sample(1:nrow(COElkHunters),size = .75*nrow(COElkHunters),replace = F)
 traindata <- COElkHunters[ data_index, ]
 testdata <- COElkHunters[-data_index, ]
 
 #' Save off for importing into AzureML
-save(COElkHunters,file="~/_code/colorado-dow/datasets/COElkHunters.RData")
 write.csv(COElkHunters,file = "~/_code/colorado-dow/datasets/COElkHunters.csv",row.names = F)
 
 fitControl <- trainControl(
@@ -105,13 +98,13 @@ HuntersModel = train(Hunters ~ ., data = COElkHunters,
                      method = "cubist", #cubist
                      # preProc = c("center", "scale"), 
                      tuneLength = 10,
-                     #tuneGrid = svmTuneGrid,
                      trControl = fitControl)
 
 HuntersModel
 
 #' Important predictors
 ImpPred <- varImp(HuntersModel,scale = T)
+ImpPred
 
 # check performance
 predictdata <- predict(HuntersModel, testdata)
@@ -130,12 +123,14 @@ ggplot(chartperformance, aes(predicted,observed)) +
   geom_point() +
   labs(title="Performance of Number of Hunters Prediction", caption="source: cpw.state.co.us")
 
+#' After final model type and tuning params have been identified, run the full dataset to utilize in 
+#' predicting future data.
+
 #' Finalize model with full dataset to train on
 FinalHuntersmodel = train(Hunters ~ ., data = COElkHunters,
                           method = "cubist",
                           # preProc = c("center", "scale"), 
                           tuneLength = 10,
-                          #tuneGrid = svmTuneGrid,
                           trControl = fitControl)
 
 FinalHuntersmodel
@@ -153,3 +148,7 @@ COElkHunters2018$Hunters[COElkHunters2018$Hunters<0] <- 0
 
 #' Save off so we don't have to recreate the model everytime we want the results
 save(COElkHunters2018,file="COElkHunters2018.RData")
+
+## TODO
+# paste in the hunters charts we had previously looked at
+# also this dataset will be an input to determining the 2018 elk harvest
