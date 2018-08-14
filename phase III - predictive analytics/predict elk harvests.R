@@ -99,9 +99,9 @@ fitControl <- trainControl(
   summaryFunction = defaultSummary)
 
 HarvestModel = train(Harvest ~ ., data = traindata,
-                     method = "svmRadial", #svmRadial
+                     method = "svmLinear", #svmRadial
                      # preProc = c("center", "scale"), 
-                     tuneLength = 10,
+                     tuneLength = 13,
                      #tuneGrid = svmTuneGrid,
                      trControl = fitControl)
 
@@ -115,7 +115,7 @@ testdata <- filter(testdata, Unit != "128")
 predictdata <- predict(HarvestModel, testdata)
 
 postResample(pred = predictdata, obs = testdata$Harvest)
-#include UnitPopulations. svmRadial RMSE=57
+#include UnitPopulations. svmRadial RMSE=57 svmLinear=50 cubist=62
 #' We can iterate the above model by tweaking preprocessing parameters, and model algorithms.
 
 #' Chart performance of predicted
@@ -127,14 +127,14 @@ ggplot(chartperformance, aes(predicted,observed)) +
 
 #' Finalize model with full dataset to train on
 FinalHarvestmodel = train(Harvest ~ ., data = COElkHarvest,
-                          method = "svmRadial",
+                          method = "svmLinear",
                           # preProc = c("center", "scale"), 
-                          tuneLength = 10,
+                          tuneLength = 13,
                           #tuneGrid = svmTuneGrid,
                           trControl = fitControl)
 
 FinalHarvestmodel
-# before using number of hunters. svmRadial RMSE=53.2
+# svmLinear RMSE=85.5
 #' Important predictors
 ImpPred <- varImp(FinalHarvestmodel,scale = T)
 

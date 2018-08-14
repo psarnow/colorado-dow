@@ -109,7 +109,6 @@ traindata <- COElkPopulation[ data_index, ]
 testdata <- COElkPopulation[-data_index, ]
 
 #' Save off for importing into AzureML
-save(COElkPopulation,file="~/_code/colorado-dow/datasets/COElkPopulation.RData")
 write.csv(COElkPopulation,file = "~/_code/colorado-dow/datasets/COElkPopulation.csv",row.names = F)
 
 COElkHarvest2018$Harvest[COElkHarvest2018$Harvest<0] <- 0
@@ -121,9 +120,9 @@ COElkHarvest2018$Harvest[COElkHarvest2018$Harvest<0] <- 0
 
 
 PopModel = train(Population.Unit ~ ., data = traindata,
-                  method = "svmRadial",
+                  method = "svmLinear",
                   # preProc = c("center", "scale"), 
-                  tuneLength = 10,
+                  tuneLength = 13,
                   #tuneGrid = svmTuneGrid,
                   trControl = fitControl)
 
@@ -136,7 +135,7 @@ ImpPred <- varImp(PopModel,scale = T)
 predictdata <- predict(PopModel, testdata)
 
 postResample(pred = predictdata, obs = testdata$Population.Unit)
-
+# svmRadial RMSE=378 svmLinear RMSE=427 cubist RMSE=448
 #' Chart performance of predicted
 chartperformance <- data.frame(predicted = predictdata, observed = testdata$Population.Unit)
 
@@ -158,7 +157,7 @@ ggplot(chartperformance, aes(predicted,observed)) +
 #' 
 
 FinalPopmodel = train(Population.Unit ~ ., data = COElkPopulation,
-                  method = "svmRadial",
+                  method = "svmLinear",
                   # preProc = c("center", "scale"), 
                   tuneLength = 10,
                   #tuneGrid = svmTuneGrid,

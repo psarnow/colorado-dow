@@ -149,6 +149,110 @@ COElkHunters2018$Hunters[COElkHunters2018$Hunters<0] <- 0
 #' Save off so we don't have to recreate the model everytime we want the results
 save(COElkHunters2018,file="COElkHunters2018.RData")
 
-## TODO
-# paste in the hunters charts we had previously looked at
-# also this dataset will be an input to determining the 2018 elk harvest
+#' ***
+#' ## Total Elk Harvest
+#' ### Statewide
+# Group seasons
+COElkHuntersStatewide <- summarise(group_by(COElkRifleAll,Year,Unit),
+                                  Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T))
+COElkHunters2018b <- COElkHunters2018
+COElkHunters2018b$Year <- as.character(COElkHunters2018b$Year)
+
+#' Join 2018 to historic data
+COElkHuntersAll <- rbind.fill(COElkHuntersStatewide,COElkHunters2018b)
+
+# Group Units
+COElkHuntersStatewide <- summarise(group_by(COElkHuntersAll,Year),
+                                   Hunters = sum(Hunters))
+
+ggplot(COElkHuntersStatewide, aes(Year,Hunters)) +
+  geom_bar(stat="identity",fill=ggthemes_data$hc$palettes$default[2]) +
+  coord_cartesian(ylim = c(110000,160000)) +
+  labs(title="Statewide Elk Hunters", caption="source: cpw.state.co.us")
+
+#' > TODO commentary
+#' 
+#' ***
+#' 
+#' ### Hunters by Unit
+#' I'd like to know where the hunters are distributed across the state.
+#' 
+#' Next year's data
+Year2018 <- filter(COElkHuntersAll, Year == "2018")
+HunterstoPlot <- left_join(Unitboundaries2,Year2018, by=c("Unit"))
+
+#+ Hunters-Map, fig.width=10, fig.height=8.46
+ggplot(HunterstoPlot, aes(long, lat, group = group)) + 
+  geom_polygon(aes(fill = Hunters),colour = "grey50", size = .2) + #Unit boundaries
+  geom_path(data = COroads,aes(x = long, y = lat, group = group), color="#3878C7",size=2) + #Roads
+  geom_text(data=data_centroids,aes(x=longitude,y=latitude,label = Unit),size=3) + #Unit labels
+  scale_fill_distiller(palette = "Oranges",direction = 1,na.value = 'light grey') +
+  xlab("") + ylab("") +
+  labs(title="Predicted 2018 Colorado Elk Hunters", caption="source: cpw.state.co.us")
+#' > TODO - commentary
+#' 
+#' ***
+#' 
+#' ### Year to Year Hunter Trends
+#' Create a png of each year
+icounter <- 0
+for (imap in unique(COElkHuntersAll$Year)){
+  # Colorado aspect ratio = 1087w x 800h -> 1.35875
+  # Use trial and error to determine which width and height to define for png files that will retain the correct aspect ratio
+  png(file=paste("HuntersMap",imap,".png"), width=948, height=700)
+  yearplot <- filter(COElkHuntersAll, Year == imap)
+  HunterstoPlot <- left_join(Unitboundaries2,yearplot, by=c("Unit"))
+  p1 <- ggplot(HunterstoPlot, aes(long, lat, group = group)) + 
+    geom_polygon(aes(fill = Hunters),colour = "grey50", size = .2) + #Unit boundaries
+    geom_path(data = COroads,aes(x = long, y = lat, group = group), color="#3878C7",size=2) + #Roads
+    geom_text(data=data_centroids,aes(x=longitude,y=latitude,label = Unit),size=5) + #Unit labels
+    scale_fill_distiller(palette = "Oranges",
+                         direction = 1,
+                         na.value = 'light grey',
+                         limits = c(0,max(COElkHuntersAll$Hunters))) + #fix so each year chart has same color breaks
+    xlab("") + ylab("") +
+    theme(plot.title=element_text(hjust = .5)) +
+    theme(plot.subtitle=element_text(hjust = icounter/length(unique(COElkHuntersAll$Year)))) +
+    labs(title="Colorado Elk Hunters", subtitle=imap, caption="source: cpw.state.co.us")
+  plot(p1)
+  dev.off()
+  icounter <- icounter + 1
+}
+
+#' Convert the .png files to one .gif file using ImageMagick. 
+system("convert -delay 150 *.png HuntersmapPred.gif")
+
+#' ![](HuntersmapPred.gif)
+#' 
+#' > TODO - commentary
+#' 
+#' Remove the .png files
+file.remove(list.files(pattern=".png"))
+#' ***
+#' ### Number of Hunters Rank of the Units
+#' Would also be beneficial to rank each unit so I can reference later. In this case
+#' average the number of hunters of the last few years
+HunterRank2018 <- filter(COElkHuntersAll, as.numeric(Year) == 2018)
+HunterRank2018 <- summarise(group_by(HunterRank2018,Unit),
+                             Hunters = mean(Hunters,na.rm = T))
+HunterRank2018$HuntersRank = rank(-HunterRank2018$Hunters)
+
+HunterRank2018 <- filter(HunterRank2018, HuntersRank <= 50) # top 50 units
+#' In order for the chart to retain the order of the rows, the X axis variable (i.e. the categories) has to be converted into a factor.
+HunterRank2018 <- HunterRank2018[order(-HunterRank2018$Hunters), ]  # sort
+HunterRank2018$Unit <- factor(HunterRank2018$Unit, levels = HunterRank2018$Unit)  # to retain the order in plot.
+
+#' Lollipop Chart
+ggplot(HunterRank2018, aes(x=Unit, y=Hunters)) + 
+  geom_point(size=3) + 
+  geom_segment(aes(x=Unit, 
+                   xend=Unit, 
+                   y=0, 
+                   yend=Hunters)) + 
+  labs(title="Elk Hunters 2018\nTop 50 Units", subtitle="Hunters by Unit", caption="source: cpw.state.co.us")
+#' > TODO - commentary
+#' 
+#' ***
+#' ## Conclusion
+#' > TODO
+#'
