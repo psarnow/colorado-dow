@@ -78,10 +78,20 @@ COElkHunters <- left_join(COElkHunters, COElkDraw, by = c("Year","Unit"))
 COElkHunters$Drawn[is.na(COElkHunters$Drawn)] <- 0
 COElkHunters$Quota[is.na(COElkHunters$Quota)] <- 0
 
-#' Split into train and test sets will use 75% of the data to train on
-data_index <- sample(1:nrow(COElkHunters),size = .75*nrow(COElkHunters),replace = F)
-traindata <- COElkHunters[ data_index, ]
-testdata <- COElkHunters[-data_index, ]
+#' Split into train and test sets will use 75% of the data to train on. Be sure to include
+#' each unit in the split. ... so do the split for each unit, first make sure each Unit has
+#' at least three entries
+#' 
+COElkHunters <- mutate(group_by(COElkHunters,Unit),
+                          numentries = n())
+COElkHunters <- filter(COElkHunters, numentries >= 3)
+COElkHunters$UnitYear <- paste(COElkHunters$Unit, COElkHunters$Year)
+
+traindata <- COElkHunters %>% group_by(Unit) %>% sample_frac(size = .75, replace = F)
+testdata <- COElkHunters[!COElkHunters$UnitYear %in% traindata$UnitYear,]
+
+traindata <- select(traindata, -UnitYear, -numentries)
+testdata <- select(testdata, -UnitYear, -numentries)
 
 #' Save off for importing into AzureML
 write.csv(COElkHunters,file = "~/_code/colorado-dow/datasets/COElkHunters.csv",row.names = F)
