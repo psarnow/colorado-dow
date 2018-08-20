@@ -29,6 +29,7 @@ library(ggplot2, quietly = T) # charting
 library(ggthemes,quietly = T) # so I can add the highcharts theme and palette
 library(scales,quietly = T) # to load the percent function when labeling plots
 library(caret,quietly = T) # classification and regression training
+library(lubridate,quietly = T) # for timing models
 #' Set our preferred charting theme
 theme_set(theme_minimal()+theme_hc()+theme(legend.key.width = unit(1.5, "cm")))
 #' Run script to get hunter data
@@ -85,26 +86,192 @@ testdata <- COElkHunters[-data_index, ]
 #' Save off for importing into AzureML
 write.csv(COElkHunters,file = "~/_code/colorado-dow/datasets/COElkHunters.csv",row.names = F)
 
+#' notice that the number of hunters data is skewed.
+# TODO, chart of hunter population density/histogram
+
+#' A general rule of thumb to consider is that skewed data whose ratio of the highest value to the 
+#' lowest value is greater than 20 have significant skewness. Also, the skewness statistic can be 
+#' used as a diagnostic. If the predictor distribution is roughly symmetric, the skewness values 
+#' will be close to zero. As the distribution becomes more right skewed, the skewness statistic 
+#' becomes larger. Similarly, as the distribution becomes more left skewed, the value becomes negative.
+#' Replacing the data with the log, square root, or inverse may help to remove the skew.
+#' caret has a preproccess function for correcting for skewness 'BoxCox'.
+#' 
+#' This is quite an iterative process. It is important to document and save off data.
+#' Run thru differing 'quick to train' methods
+#' Which one performed the best?
+#' Determine other similar methods and run them.
+#' Which one performed the best?
+#' Determine disimmilar methods.
+#' Which one performed the best?
+#' 
+#' Now lets work on some refined tuning.
+#' Assess preprocessing functions. center, scale, pca, boxcox, nzv, etc
+#' #' some units have very little data, should we remove them? 'zero variances
+#' 123, 791, 87, 94, 88
+#' TODO, frequency plot of Unit
+
+#' Run the list of other favorable methods with preprocessing in place
+#' Further tune method's parameters
+#' 
+#' Is there a method that is best?  Are some methods better at part of the data
+#' than others? maybe we combine?
+#' 
+#' Insert into AzureML to further inspections and create into a webservice
+#' If the packages or methods are not yet supported in Azure, we will need to create an R Model
+#' instead of just running an rscript.
+#' 
+#' Additonally, AzureML has some additional methods to consider, ensure we attempt to use those as well.
+#' 
+#' 
+#' Step 1 - Loop through possible methods, utilizing the quicker 'adaptive_cv' parameter search from caret.
+#' # Consider scripting this into AzureML to make it run much faster, though there is more setup and errors to 
+#' control for
+quickmethods <- c("lm",'svmLinear',"svmRadial","knn","cubist","kknn","glm.nb")
+
+step1_all <- NULL
+for (imethod in quickmethods) {
+  step1 <- NULL
+  start <- now()
+  
+  if (imethod == "lm") {
+    controlmethod <- "repeatedcv"
+  } else {controlmethod <- "adaptive_cv"}
+  
+  fitControl <- trainControl(
+    method = controlmethod,
+    # search = 'random',
+    number = 4,
+    repeats = 4,
+    allowParallel = TRUE,
+    summaryFunction = defaultSummary)
+  
+  HuntersModel_1 = train(Hunters ~ ., data = traindata,
+                       method = imethod,
+                       preProc = c("center","scale"), 
+                       tuneLength = 15,
+                       trControl = fitControl)
+  
+  HuntersModel_1
+  
+  # measure performance
+  predictdata <- predict(HuntersModel_1, testdata)
+  
+  step1$method <- imethod
+  step1$RMSE <- postResample(pred = predictdata, obs = testdata$Hunters)[1]
+  step1$duration <- now() - start
+  step1 <- as.data.frame(step1)
+  step1_all <- rbind(step1_all,step1)
+}
+step1_all
+
+top_two_models <- top_n(step1_all,2,-RMSE)$method
+#' Take the top two and determine some additonal methods to try by maximizing the Jaccard
+#' dissimilarity between sets of models
+tag <- read.csv("tag_data.csv", row.names = 1)
+tag <- as.matrix(tag)
+
+## Select only models for regression
+regModels <- tag[tag[,"Regression"] == 1,]
+
+all <- 1:nrow(regModels)
+dissimilarmethods_all <- NULL
+for (itoptwo in 1:2) {
+  ## Seed the analysis with the model of interest
+  start <- grep(top_two_models[itoptwo], rownames(regModels), fixed = TRUE)
+  pool <- all[all != start]
+  
+  ## Select 4 model models by maximizing the Jaccard
+  ## dissimilarity between sets of models
+  nextMods <- maxDissim(regModels[start,,drop = FALSE], 
+                        regModels[pool, ], 
+                        method = "Jaccard",
+                        n = 4)
+  
+  rownames(regModels)[c(nextMods)]
+  
+  dissimilarmethods <- rownames(regModels)[nextMods]
+  dissimilarmethods <- str_extract(string = dissimilarmethods,pattern = "[:alnum:]+(?=\\))")
+  dissimilarmethods_all <- c(dissimilarmethods_all,dissimilarmethods)
+}
+
+dissimilarmethods_all <- unique(dissimilarmethods_all)
+
+#' Now we have 8 more methods to try in the same manner
+
+for (imethod in dissimilarmethods_all) {
+  step1 <- NULL
+  start_timer <- now()[1]
+  
+  if (imethod == "lm") {
+    controlmethod <- "repeatedcv"
+  } else {controlmethod <- "adaptive_cv"}
+  
+  fitControl <- trainControl(
+    method = controlmethod,
+    # search = 'random',
+    number = 4,
+    repeats = 4,
+    allowParallel = TRUE,
+    summaryFunction = defaultSummary)
+  
+  HuntersModel_1 = train(Hunters ~ ., data = traindata,
+                         method = imethod,
+                         preProc = c("center","scale"), 
+                         tuneLength = 15,
+                         trControl = fitControl)
+  
+  HuntersModel_1
+  
+  # measure performance
+  predictdata <- predict(HuntersModel_1, testdata)
+  
+  step1$method <- imethod
+  step1$RMSE <- postResample(pred = predictdata, obs = testdata$Hunters)[1]
+  step1$duration <- now()[1] - start_timer[1]
+  step1 <- as.data.frame(step1)
+  step1_all <- rbind(step1_all,step1)
+}
+step1_all
+
+#' Now lets work on some refined tuning on the top methods
+topmethod <- top_n(step1_all,1,-RMSE)$method
+
+#' Assess preprocessing functions. center, scale, pca, boxcox, nzv, etc
+
+
+
+
+
+
+
+
+
 fitControl <- trainControl(
-  method = "repeatedcv",
-  number = 4, #4
-  repeats = 10, #20
+  method = "adaptive_cv", #repeatedcv
+  # search = 'random',
+  number = 10, #4
+  repeats = 10, #10
   # classProbs = TRUE,
   # savePred = TRUE,
   allowParallel = TRUE,
   summaryFunction = defaultSummary)
 
-HuntersModel = train(Hunters ~ ., data = COElkHunters,
-                     method = "cubist", #cubist
-                     # preProc = c("center", "scale"), 
-                     tuneLength = 10,
+#glmnet 179 AML
+#lars2 174 AML
+#rlm 175 AML
+#
+HuntersModel = train(Hunters ~ ., data = traindata,
+                     method = "svmRadial", #kknn
+                     preProc = c("center","scale"), 
+                     tuneLength = 20,
                      trControl = fitControl)
 
 HuntersModel
 
 #' Important predictors
-ImpPred <- varImp(HuntersModel,scale = T)
-ImpPred
+# ImpPred <- varImp(HuntersModel,scale = T)
+# ImpPred
 
 # check performance
 predictdata <- predict(HuntersModel, testdata)
@@ -112,8 +279,9 @@ predictdata <- predict(HuntersModel, testdata)
 postResample(pred = predictdata, obs = testdata$Hunters)
 # svmRadial RMSE=427
 # svmLinear RMSE=363
-# cubist RMSE=104
-
+# cubist RMSE=155, cubist pca RMSE=153
+# kknn RMSE=132, BoxCox 130,
+# ppr RMSE=144
 #' We can iterate the above model by tweaking preprocessing parameters, and model algorithms.
 
 #' Chart performance of predicted

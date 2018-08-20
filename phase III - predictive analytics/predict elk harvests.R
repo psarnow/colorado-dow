@@ -134,7 +134,7 @@ FinalHarvestmodel = train(Harvest ~ ., data = COElkHarvest,
                           trControl = fitControl)
 
 FinalHarvestmodel
-# svmLinear RMSE=85.5
+# svmLinear RMSE=80.7
 #' Important predictors
 ImpPred <- varImp(FinalHarvestmodel,scale = T)
 
