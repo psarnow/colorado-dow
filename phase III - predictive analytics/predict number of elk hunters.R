@@ -29,6 +29,8 @@ library(ggplot2, quietly = T) # charting
 library(ggthemes,quietly = T) # so I can add the highcharts theme and palette
 library(scales,quietly = T) # to load the percent function when labeling plots
 library(caret,quietly = T) # classification and regression training
+library(foreach,quietly = T) # parallel processing to speed up the model training
+library(doMC,quietly = T) # parallel processing to speed up the model training
 library(lubridate,quietly = T) # for timing models
 #' Set our preferred charting theme
 theme_set(theme_minimal()+theme_hc()+theme(legend.key.width = unit(1.5, "cm")))
@@ -106,7 +108,12 @@ write.csv(COElkHunters,file = "~/_code/colorado-dow/datasets/COElkHunters.csv",r
 #' becomes larger. Similarly, as the distribution becomes more left skewed, the value becomes negative.
 #' Replacing the data with the log, square root, or inverse may help to remove the skew.
 #' caret has a preproccess function for correcting for skewness 'BoxCox'.
-#' 
+
+preProcValues2 <- preProcess(as.data.frame(traindata), method = "BoxCox")
+trainBC <- predict(preProcValues2, as.data.frame(traindata))
+testBC <- predict(preProcValues2, as.data.frame(testdata))
+preProcValues2
+
 #' This is quite an iterative process. It is important to document and save off data.
 #' Run thru differing 'quick to train' methods
 #' Which one performed the best?
@@ -155,6 +162,9 @@ for (imethod in quickmethods) {
     repeats = 4,
     allowParallel = TRUE,
     summaryFunction = defaultSummary)
+  
+  registerDoSEQ()
+  registerDoMC(cores = 6)
   
   HuntersModel_1 = train(Hunters ~ ., data = traindata,
                        method = imethod,
@@ -225,6 +235,9 @@ for (imethod in dissimilarmethods_all) {
     allowParallel = TRUE,
     summaryFunction = defaultSummary)
   
+  registerDoSEQ()
+  registerDoMC(cores = 6)
+  
   HuntersModel_1 = train(Hunters ~ ., data = traindata,
                          method = imethod,
                          preProc = c("center","scale"), 
@@ -248,18 +261,9 @@ step1_all
 topmethod <- top_n(step1_all,1,-RMSE)$method
 
 #' Assess preprocessing functions. center, scale, pca, boxcox, nzv, etc
-
-
-
-
-
-
-
-
-
 fitControl <- trainControl(
-  method = "adaptive_cv", #repeatedcv
-  # search = 'random',
+  method = "repeatedcv", #repeatedcv
+  #search = 'random',
   number = 10, #4
   repeats = 10, #10
   # classProbs = TRUE,
@@ -267,14 +271,19 @@ fitControl <- trainControl(
   allowParallel = TRUE,
   summaryFunction = defaultSummary)
 
-#glmnet 179 AML
-#lars2 174 AML
-#rlm 175 AML
-#
-HuntersModel = train(Hunters ~ ., data = traindata,
-                     method = "svmRadial", #kknn
-                     preProc = c("center","scale"), 
-                     tuneLength = 20,
+# run again with a tune grid
+kknnTuneGrid <- data.frame(kmax = c(211,211,211,211,211),
+                           distance = c(2.25*.7,2.25*.9,2.25,2.25*1.1,2.25*1.3),
+                           kernel = c("cos","cos","cos","cos","cos"))
+
+registerDoSEQ()
+registerDoMC(cores = 6)
+
+HuntersModel = train(Hunters ~ ., data = select(traindata,-Drawn,-Quota),
+                     method = topmethod,
+                     #preProc = c("center"), 
+                     #tuneLength = 10,
+                     tuneGrid = kknnTuneGrid,
                      trControl = fitControl)
 
 HuntersModel
@@ -287,11 +296,6 @@ HuntersModel
 predictdata <- predict(HuntersModel, testdata)
 
 postResample(pred = predictdata, obs = testdata$Hunters)
-# svmRadial RMSE=427
-# svmLinear RMSE=363
-# cubist RMSE=155, cubist pca RMSE=153
-# kknn RMSE=132, BoxCox 130,
-# ppr RMSE=144
 #' We can iterate the above model by tweaking preprocessing parameters, and model algorithms.
 
 #' Chart performance of predicted
