@@ -257,10 +257,12 @@ for (imethod in dissimilarmethods_all) {
 }
 step1_all
 
-#' Now lets work on some refined tuning on the top methods
-topmethod <- top_n(step1_all,1,-RMSE)$method
 
-#' Assess preprocessing functions. center, scale, pca, boxcox, nzv, etc
+#' Now lets work on some refined tuning on the top methods
+#' Any valuable preprocessing steps?
+preprocessfunctions <- c("BoxCox", "YeoJohnson", "expoTrans", "center", "scale", "range", "knnImpute", "bagImpute", "medianImpute", "pca", "ica", "spatialSign", "corr", "zv", "nzv")
+topmethods <- top_n(step1_all,2,-RMSE)$method
+
 fitControl <- trainControl(
   method = "repeatedcv", #repeatedcv
   #search = 'random',
@@ -270,6 +272,73 @@ fitControl <- trainControl(
   # savePred = TRUE,
   allowParallel = TRUE,
   summaryFunction = defaultSummary)
+
+PPperformance_all <- NULL
+PPperformance <- NULL
+for (imethod in topmethods) {
+  for (ipreprocess in preprocessfunctions) {
+    registerDoSEQ()
+    registerDoMC(cores = 6)
+    
+    PreProcessModel = train(Hunters ~ ., data = traindata,
+                         method = imethod,
+                         preProc = ipreprocess, 
+                         #tuneLength = 10,
+                         #tuneGrid = kknnTuneGrid,
+                         trControl = fitControl)
+    
+    print(PreProcessModel)
+    
+    # check performance
+    predictdata <- predict(PreProcessModel, testdata)
+    
+    PPperformance$method <- imethod
+    PPperformance$preprocess <- ipreprocess
+    PPperformance$RMSE <- postResample(pred = predictdata, obs = testdata$Hunters)[1]
+    PPperformance <- as.data.frame(PPperformance)
+    PPperformance_all <- rbind(PPperformance_all,PPperformance)
+  }
+}
+PPperformance_all
+
+#' Now we can review the predictors, there are only a few fields so I will manually test performance
+#' while excluding each of them to monitor their importance.
+#' Some of our fields are instinctively required (Year, Unit)
+Predictors <- c("Quota","Drawn")
+Predictorperformance_all <- NULL
+Predictorperformance <- NULL
+for (imethod in topmethods) {
+  for (ipredictor in Predictors) {
+    registerDoSEQ()
+    registerDoMC(cores = 6)
+    
+    PredictorModel = train(Hunters ~ ., data = select(traindata,-ipredictor),
+                            method = imethod,
+                            trControl = fitControl)
+    
+    print(PredictorModel)
+    
+    # check performance
+    predictdata <- predict(PredictorModel, testdata)
+    
+    Predictorperformance$method <- imethod
+    Predictorperformance$missing_predictor <- ipredictor
+    Predictorperformance$RMSE <- postResample(pred = predictdata, obs = testdata$Hunters)[1]
+    Predictorperformance <- as.data.frame(Predictorperformance)
+    Predictorperformance_all <- rbind(Predictorperformance_all,Predictorperformance)
+  }
+}
+Predictorperformance_all
+
+#' Use above information to test out various combinations of preprocessing and predictor sets
+#' 
+
+
+
+#' Tune each model's parameters
+#' 
+
+
 
 # run again with a tune grid
 kknnTuneGrid <- data.frame(kmax = c(211,211,211,211,211),
