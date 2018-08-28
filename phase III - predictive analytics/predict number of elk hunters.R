@@ -264,8 +264,8 @@ preprocessfunctions <- c("BoxCox", "YeoJohnson", "expoTrans", "center", "scale",
 topmethods <- top_n(step1_all,2,-RMSE)$method
 
 fitControl <- trainControl(
-  method = "repeatedcv", #repeatedcv
-  #search = 'random',
+  method = "adaptive_cv", #repeatedcv, 
+  search = 'random',
   number = 10, #4
   repeats = 10, #10
   # classProbs = TRUE,
@@ -314,6 +314,7 @@ for (imethod in topmethods) {
     
     PredictorModel = train(Hunters ~ ., data = select(traindata,-ipredictor),
                             method = imethod,
+                            tuneLength = 15,
                             trControl = fitControl)
     
     print(PredictorModel)
