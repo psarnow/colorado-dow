@@ -92,6 +92,8 @@ COElkHunters$UnitYear <- paste(COElkHunters$Unit, COElkHunters$Year)
 traindata <- COElkHunters %>% group_by(Unit) %>% sample_frac(size = .75, replace = F)
 testdata <- COElkHunters[!COElkHunters$UnitYear %in% traindata$UnitYear,]
 
+COElkHunters <- select(COElkHunters, -UnitYear, -numentries)
+
 traindata <- select(traindata, -UnitYear, -numentries)
 testdata <- select(testdata, -UnitYear, -numentries)
 
@@ -300,7 +302,20 @@ for (imethod in topmethods) {
   }
 }
 PPperformance_all
-
+#' Output from AzureML
+# [ModuleOutput]          method preprocess     RMSE
+# [ModuleOutput] RMSE       kknn     BoxCox 130.7939
+# [ModuleOutput] RMSE1      kknn YeoJohnson 130.9600
+# [ModuleOutput] RMSE2      kknn     center 130.7331
+# [ModuleOutput] RMSE3      kknn      scale 130.1818
+# [ModuleOutput] RMSE4      kknn        pca 130.2071
+# [ModuleOutput] RMSE5 svmRadial     BoxCox 154.0898
+# [ModuleOutput] RMSE6 svmRadial YeoJohnson 169.9816
+# [ModuleOutput] RMSE7 svmRadial     center 154.1891
+# [ModuleOutput] RMSE8 svmRadial      scale 154.1000
+# [ModuleOutput] RMSE9 svmRadial        pca 164.0881
+#' svmRadial and kknn don't perform better with any of the preprocessing functions in place
+  
 #' Now we can review the predictors, there are only a few fields so I will manually test performance
 #' while excluding each of them to monitor their importance.
 #' Some of our fields are instinctively required (Year, Unit)
@@ -331,20 +346,177 @@ for (imethod in topmethods) {
 }
 Predictorperformance_all
 
+#       method    missing_predictor    RMSE
+# RMSE  svmRadial             Quota 152.5027
+# RMSE1 svmRadial             Drawn 153.7358
+# RMSE2      kknn             Quota 131.1298
+# RMSE3      kknn             Drawn 134.1082
+# RMSE4      kknn   Quota and Drawn 130.3965
+#' svMRadial will perform better with all of the predictors, while kknn performs
+#' better with only Unit and Year fields
+
 #' Use above information to test out various combinations of preprocessing and predictor sets
 #' 
+#' 
+#' kknn without Quota and Drawn
+fitControl <- trainControl(
+  method = "adaptive_cv", #repeatedcv, 
+  search = 'random',
+  number = 10, #4
+  repeats = 10, #10
+  # classProbs = TRUE,
+  # savePred = TRUE,
+  allowParallel = TRUE,
+  summaryFunction = defaultSummary)
+
+registerDoSEQ()
+registerDoMC(cores = 6)
+
+kknnModel = train(Hunters ~ ., data = select(COElkHunters,-Quota, -Drawn),
+                  method = "kknn",
+                  tuneLength = 75,
+                  trControl = fitControl)
+
+print(kknnModel)
+
+# Best RMSE, not sure why caret is selecting parameters with higher RMSE, lets select manually
+RSMEkknn <- filter(kknnModel$results, RMSE == min(RMSE))
+RSMEkknn$kernel <- as.character(RSMEkknn$kernel)
+# run again with a tune grid
+kknnTuneGrid <- data.frame(kmax = c(RSMEkknn$kmax,RSMEkknn$kmax,RSMEkknn$kmax,RSMEkknn$kmax,RSMEkknn$kmax),
+                           distance = c(RSMEkknn$distance*.7,RSMEkknn$distance*.9,RSMEkknn$distance,RSMEkknn$distance*1.1,RSMEkknn$distance*1.3),
+                           kernel = c(RSMEkknn$kernel,RSMEkknn$kernel,RSMEkknn$kernel,RSMEkknn$kernel,RSMEkknn$kernel))
+
+fitControl <- trainControl(
+  method = "repeatedcv", #repeatedcv, 
+  number = 10, #4
+  repeats = 10, #10
+  allowParallel = TRUE,
+  summaryFunction = defaultSummary)
+
+registerDoSEQ()
+registerDoMC(cores = 6)
+
+kknnGridModel = train(Hunters ~ ., data = select(COElkHunters,-Quota, -Drawn),
+                  method = "kknn",
+                  tuneGrid = kknnTuneGrid,
+                  trControl = fitControl)
+
+print(kknnGridModel)
+
+# Best RMSE, not sure why caret is selecting parameters with higher RMSE, lets select manually
+RSMEkknn <- filter(kknnGridModel$results, RMSE == min(RMSE))
+RSMEkknn$kernel <- as.character(RSMEkknn$kernel)
+# run again with a tune grid
+kknnTuneGrid2 <- data.frame(kmax = c(RSMEkknn$kmax*.7,RSMEkknn$kmax*.9,RSMEkknn$kmax,RSMEkknn$kmax*1.1,RSMEkknn$kmax*1.3),
+                           distance = c(RSMEkknn$distance,RSMEkknn$distance,RSMEkknn$distance,RSMEkknn$distance,RSMEkknn$distance),
+                           kernel = c(RSMEkknn$kernel,RSMEkknn$kernel,RSMEkknn$kernel,RSMEkknn$kernel,RSMEkknn$kernel))
+
+registerDoSEQ()
+registerDoMC(cores = 6)
+
+kknnGridModel2 = train(Hunters ~ ., data = select(COElkHunters,-Quota, -Drawn),
+                      method = "kknn",
+                      tuneGrid = kknnTuneGrid2,
+                      trControl = fitControl)
+
+print(kknnGridModel2)
+
+# One more time on final parameter (kernel)
+# Best RMSE, not sure why caret is selecting parameters with higher RMSE, lets select manually
+RSMEkknn <- filter(kknnGridModel2$results, RMSE == min(RMSE))[1,]
+kernels <- levels(kknnModel$results$kernel)
+# run again with a tune grid
+kknnTuneGrid3 <- data.frame(kmax = rep(465.0,8),
+                            distance = rep(0.1395586,8),
+                            kernel = kernels)
+
+registerDoSEQ()
+registerDoMC(cores = 6)
+
+kknnGridModel3 = train(Hunters ~ ., data = select(COElkHunters,-Quota, -Drawn),
+                       method = "kknn",
+                       tuneGrid = kknnTuneGrid3,
+                       trControl = fitControl)
+
+print(kknnGridModel3)
+RSMEkknn <- filter(kknnGridModel3$results, RMSE == min(RMSE))
+
+#' Best RMSE for kknn thus far
+RSMEkknn <- filter(kknnModel$results, RMSE == min(RMSE))
+
+#' Work thru some resampling methods with best kknn params
+kknnTuneGrid4 <- data.frame(kmax = RSMEkknn$kmax,
+                            distance = RSMEkknn$distance,
+                            kernel = as.character(RSMEkknn$kernel))
+
+trainmethods <- c("boot", "boot632", "optimism_boot", "boot_all", "cv", "repeatedcv", "LOOCV", "LGOCV", "none")
+trainmethodperformance_all <- NULL
+for (itrainmethod in trainmethods) {
+  trainmethodperformance <- NULL
+  fitControl <- trainControl(
+    method = itrainmethod,
+    number = 10, #4
+    repeats = 10, #10
+    allowParallel = TRUE,
+    summaryFunction = defaultSummary)
+  
+  registerDoSEQ()
+  registerDoMC(cores = 6)
+  
+  kknnTrainModel = train(Hunters ~ ., data = select(COElkHunters,-Quota, -Drawn),
+                         method = "kknn",
+                         tuneGrid = kknnTuneGrid4,
+                         trControl = fitControl)
+  
+  print(kknnTrainModel)
+  trainmethodperformance <- filter(kknnTrainModel$results, RMSE == min(RMSE))
+  trainmethodperformance$trainmethod <- itrainmethod
+  trainmethodperformance_all <- rbind.fill(trainmethodperformance_all,trainmethodperformance)
+}
 
 
 
+
+
+# check performance
+predictdata <- predict(kknnModelgrid, testdata)
+
+postResample(pred = predictdata, obs = testdata$Hunters)
+
+
+
+
+kknnperformance_all <- NULL
+#kmax = 16, distance = 1.063952 and kernel = triweight
+kknnTuneGrid <- data.frame(kmax = c(211,211,211,211,211),
+                           distance = c(2.25*.7,2.25*.9,2.25,2.25*1.1,2.25*1.3),
+                           kernel = c("cos","cos","cos","cos","cos"))
+
+
+for (ipredictor in Predictors) {
+  kknnperformance <- NULL
+
+  
+  
+  # check performance
+  predictdata <- predict(kknnModel, testdata)
+  
+  kknnperformance$kmax <- imethod
+  kknnperformance$missing_predictor <- ipredictor
+  kknnperformance$RMSE <- postResample(pred = predictdata, obs = testdata$Hunters)[1]
+  kknnperformance <- as.data.frame(kknnperformance)
+  kknnperformance_all <- rbind(kknnperformance_all,kknnperformance)
+}
 #' Tune each model's parameters
 #' 
 
 
 
 # run again with a tune grid
-kknnTuneGrid <- data.frame(kmax = c(211,211,211,211,211),
-                           distance = c(2.25*.7,2.25*.9,2.25,2.25*1.1,2.25*1.3),
-                           kernel = c("cos","cos","cos","cos","cos"))
+kknnTuneGrid <- data.frame(kmax = c(36,36,36,36,36),
+                           distance = c(0.5207858*.7,0.5207858*.9,0.5207858,0.5207858*1.1,0.5207858*1.3),
+                           kernel = c("biweight","biweight","biweight","biweight","biweight"))
 
 registerDoSEQ()
 registerDoMC(cores = 6)
