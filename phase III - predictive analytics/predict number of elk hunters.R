@@ -9,8 +9,8 @@
 #' ---
 #' ***
 #' ## Description
-#' Use historical Draw Results, and number of hunters to train a model we can use to 
-#' predict the number of future hunters.
+#' Use historical draw results, and number of hunters to train a model we can use to 
+#' predict the number of hunters in future years.
 #' 
 #' TODO - Include other potential inputs that could impact how many hunters get a license
 #' and show up. Those could include economic indicators, and costs associated with hunting
@@ -53,7 +53,7 @@ source('~/_code/colorado-dow/datasets/Colorado GMUnit and Road data.R', echo=F)
 #' Take a peak at the boundary data
 head(Unitboundaries2)
 
-#' Move back to predictive analytics directory
+#' Set to predictive analytics directory
 setwd("~/_code/colorado-dow/phase III - predictive analytics")
 #' ***
 #' ## Organize data
@@ -80,7 +80,7 @@ COElkHunters <- left_join(COElkHunters, COElkDraw, by = c("Year","Unit"))
 COElkHunters$Drawn[is.na(COElkHunters$Drawn)] <- 0
 COElkHunters$Quota[is.na(COElkHunters$Quota)] <- 0
 
-#' Split into train and test sets will use 75% of the data to train on. Be sure to include
+#' Split into train and test sets. Will use 75% of the data to train on. Be sure to include
 #' each unit in the split. ... so do the split for each unit, first make sure each Unit has
 #' at least three entries
 #' 
@@ -101,7 +101,12 @@ testdata <- select(testdata, -UnitYear, -numentries)
 write.csv(COElkHunters,file = "~/_code/colorado-dow/datasets/COElkHunters.csv",row.names = F)
 
 #' notice that the number of hunters data is skewed.
-# TODO, chart of hunter population density/histogram
+ggplot(COElkHunters, aes(Hunters)) + 
+  geom_density() +
+  xlab("Hunters in Unit") +
+  ylab("Number of Units") +
+  theme(axis.text.y = element_blank()) +
+  labs(title="Distribution of Hunters in each Unit", subtitle="2006-2017", caption="source: cpw.state.co.us")
 
 #' A general rule of thumb to consider is that skewed data whose ratio of the highest value to the 
 #' lowest value is greater than 20 have significant skewness. Also, the skewness statistic can be 
@@ -109,13 +114,22 @@ write.csv(COElkHunters,file = "~/_code/colorado-dow/datasets/COElkHunters.csv",r
 #' will be close to zero. As the distribution becomes more right skewed, the skewness statistic 
 #' becomes larger. Similarly, as the distribution becomes more left skewed, the value becomes negative.
 #' Replacing the data with the log, square root, or inverse may help to remove the skew.
-#' caret has a preproccess function for correcting for skewness 'BoxCox'.
 
+#' Example of how BoxCox can redistribute the data
 preProcValues2 <- preProcess(as.data.frame(traindata), method = "BoxCox")
 trainBC <- predict(preProcValues2, as.data.frame(traindata))
-testBC <- predict(preProcValues2, as.data.frame(testdata))
-preProcValues2
 
+ggplot(trainBC, aes(Hunters)) + 
+  geom_density() +
+  xlab("BoxCox Hunters in Unit") +
+  ylab("Number of Units") +
+  theme(axis.text.y = element_blank()) +
+  labs(title="BoxCox Distribution of Hunters in each Unit", subtitle="2006-2017", caption="source: cpw.state.co.us")
+
+#' caret has a preproccess function for correcting for skewness 'BoxCox', we will need to be sure to
+#' look at using this function in the training models.
+
+#' ## Model Building
 #' This is quite an iterative process. It is important to document and save off data.
 #' Run thru differing 'quick to train' methods
 #' Which one performed the best?
@@ -475,70 +489,31 @@ for (itrainmethod in trainmethods) {
   trainmethodperformance_all <- rbind.fill(trainmethodperformance_all,trainmethodperformance)
 }
 
+fitControl <- trainControl(
+  method = "optimism_boot",
+  number = 10, #4
+  allowParallel = TRUE,
+  summaryFunction = defaultSummary)
 
+kknnFinalTrainModel = train(Hunters ~ ., data = COElkHunters,
+                       method = "kknn",
+                       tuneGrid = kknnTuneGrid4,
+                       trControl = fitControl)
 
+# save off for future loading
+save(kknnFinalTrainModel, file = "~/_code/colorado-dow/datasets/kknnFinalTrainModel.RData")
 
-
-# check performance
-predictdata <- predict(kknnModelgrid, testdata)
-
-postResample(pred = predictdata, obs = testdata$Hunters)
-
-
-
-
-kknnperformance_all <- NULL
-#kmax = 16, distance = 1.063952 and kernel = triweight
-kknnTuneGrid <- data.frame(kmax = c(211,211,211,211,211),
-                           distance = c(2.25*.7,2.25*.9,2.25,2.25*1.1,2.25*1.3),
-                           kernel = c("cos","cos","cos","cos","cos"))
-
-
-for (ipredictor in Predictors) {
-  kknnperformance <- NULL
-
-  
-  
-  # check performance
-  predictdata <- predict(kknnModel, testdata)
-  
-  kknnperformance$kmax <- imethod
-  kknnperformance$missing_predictor <- ipredictor
-  kknnperformance$RMSE <- postResample(pred = predictdata, obs = testdata$Hunters)[1]
-  kknnperformance <- as.data.frame(kknnperformance)
-  kknnperformance_all <- rbind(kknnperformance_all,kknnperformance)
-}
-#' Tune each model's parameters
-#' 
-
-
-
-# run again with a tune grid
-kknnTuneGrid <- data.frame(kmax = c(36,36,36,36,36),
-                           distance = c(0.5207858*.7,0.5207858*.9,0.5207858,0.5207858*1.1,0.5207858*1.3),
-                           kernel = c("biweight","biweight","biweight","biweight","biweight"))
-
-registerDoSEQ()
-registerDoMC(cores = 6)
-
-HuntersModel = train(Hunters ~ ., data = select(traindata,-Drawn,-Quota),
-                     method = topmethod,
-                     #preProc = c("center"), 
-                     #tuneLength = 10,
-                     tuneGrid = kknnTuneGrid,
-                     trControl = fitControl)
-
-HuntersModel
-
-#' Important predictors
-# ImpPred <- varImp(HuntersModel,scale = T)
-# ImpPred
+# back to train vs test data for one more performance measure and chart... even though
+# for future data we will use the final trained model
+kknnTrainModel = train(Hunters ~ ., data = traindata,
+                            method = "kknn",
+                            tuneGrid = kknnTuneGrid4,
+                            trControl = fitControl)
 
 # check performance
-predictdata <- predict(HuntersModel, testdata)
+predictdata <- predict(kknnTrainModel, testdata)
 
 postResample(pred = predictdata, obs = testdata$Hunters)
-#' We can iterate the above model by tweaking preprocessing parameters, and model algorithms.
 
 #' Chart performance of predicted
 chartperformance <- data.frame(predicted = predictdata, observed = testdata$Hunters)
@@ -547,26 +522,177 @@ ggplot(chartperformance, aes(predicted,observed)) +
   geom_point() +
   labs(title="Performance of Number of Hunters Prediction", caption="source: cpw.state.co.us")
 
-#' After final model type and tuning params have been identified, run the full dataset to utilize in 
-#' predicting future data.
 
-#' Finalize model with full dataset to train on
-FinalHuntersmodel = train(Hunters ~ ., data = COElkHunters,
-                          method = "cubist",
-                          # preProc = c("center", "scale"), 
-                          tuneLength = 10,
-                          trControl = fitControl)
+### SVM
+# [ModuleOutput] Support Vector Machines with Radial Basis Function Kernel 
+# [ModuleOutput] 
+# [ModuleOutput] 1540 samples
+# [ModuleOutput]    4 predictors
+# [ModuleOutput] 
+# [ModuleOutput] No pre-processing
+# [ModuleOutput] Resampling: Cross-Validated (10 fold, repeated 10 times) 
+# [ModuleOutput] 
+# [ModuleOutput] Summary of sample sizes: 1386, 1386, 1387, 1387, 1385, 1385, ... 
+# [ModuleOutput] 
+# [ModuleOutput] Resampling results across tuning parameters:
+#   [ModuleOutput] 
+# [ModuleOutput]   C        RMSE  Rsquared  RMSE SD  Rsquared SD
+# [ModuleOutput]   0.25     276   0.946     30.6     0.00822    
+# [ModuleOutput]   0.5      203   0.96      21.4     0.00754    
+# [ModuleOutput]   1        180   0.965     17.7     0.00671    
+# [ModuleOutput]   2        168   0.969     15.7     0.00614    
+# [ModuleOutput]   4        158   0.972     14.9     0.0055     
+# [ModuleOutput]   8        150   0.975     14.7     0.00506    
+# [ModuleOutput]   16       146   0.976     14.7     0.00481    
+# [ModuleOutput]   32       144   0.976     14.7     0.00477    
+# [ModuleOutput]   64       143   0.977     14.6     0.00474    
+# [ModuleOutput]   128      140   0.977     14.3     0.00469    
+# [ModuleOutput]   256      139   0.978     15       0.00485    
+# [ModuleOutput]   512      137   0.978     14.9     0.00484    
+# [ModuleOutput]   1020     136   0.979     15.3     0.00494    
+# [ModuleOutput]   2050     135   0.979     15.6     0.00513    
+# [ModuleOutput]   4100     136   0.979     15.5     0.0051     
+# [ModuleOutput]   8190     137   0.978     15.7     0.00518    
+# [ModuleOutput]   16400    139   0.978     16.5     0.00551    
+# [ModuleOutput]   32800    141   0.977     17.6     0.006      
+# [ModuleOutput]   65500    145   0.976     19.4     0.00659    
+# [ModuleOutput]   131000   151   0.974     20.8     0.00718    
+# [ModuleOutput]   262000   161   0.97      27.2     0.0104     
+# [ModuleOutput]   524000   478   0.8       325      0.172      
+# [ModuleOutput]   1050000  1180  0.5       1010     0.204      
+# [ModuleOutput]   2100000  3240  0.148     2260     0.117      
+# [ModuleOutput]   4190000  6000  0.0604    6400     0.0527     
+# [ModuleOutput] 
+# [ModuleOutput] Tuning parameter 'sigma' was held constant at a value of 0.0037653
+# [ModuleOutput] RMSE was used to select the optimal model using  the smallest value.
+# [ModuleOutput] The final values used for the model were sigma = 0.00377 and C = 2048. 
 
-FinalHuntersmodel
 
-#' Important predictors
-ImpPred <- varImp(FinalHuntersmodel,scale = T)
+# run again with a tune grid
+svmRadTuneGrid <- data.frame(.sigma = c(0.0037653,0.0037653,0.0037653,0.0037653,0.0037653),
+                            .C = c(2048*.7,2048*.9,2048,2048*1.1,2048*1.3))
+
+fitControl <- trainControl(
+  method = "repeatedcv", #repeatedcv, 
+  number = 10, #4
+  repeats = 10, #10
+  allowParallel = TRUE,
+  summaryFunction = defaultSummary)
+
+registerDoSEQ()
+registerDoMC(cores = 6)
+
+svmRadGridModel = train(Hunters ~ ., data = COElkHunters,
+                      method = "svmRadial",
+                      tuneGrid = svmRadTuneGrid,
+                      trControl = fitControl)
+
+print(svmRadGridModel)
+
+# Best RMSE, not sure why caret is selecting parameters with higher RMSE, lets select manually
+RSMEsvmRad <- filter(svmRadGridModel$results, RMSE == min(RMSE))
+
+# run again with a tune grid
+svmRadTuneGrid2 <- data.frame(.sigma = c(RSMEsvmRad$sigma*.7,RSMEsvmRad$sigma*.9,RSMEsvmRad$sigma,RSMEsvmRad$sigma*1.1,RSMEsvmRad$sigma*1.3),
+                             .C = c(RSMEsvmRad$C,RSMEsvmRad$C,RSMEsvmRad$C,RSMEsvmRad$C,RSMEsvmRad$C))
+
+registerDoSEQ()
+registerDoMC(cores = 6)
+
+svmRadGridModel2 = train(Hunters ~ ., data = COElkHunters,
+                        method = "svmRadial",
+                        tuneGrid = svmRadTuneGrid2,
+                        trControl = fitControl)
+
+print(svmRadGridModel2)
+
+RSMEsvmRad <- filter(svmRadGridModel2$results, RMSE == min(RMSE))
+
+#' Work thru some resampling methods with best kknn params
+svmRadTuneGrid3 <- data.frame(.sigma = RSMEsvmRad$sigma,
+                            .C = RSMEsvmRad$C)
+
+trainmethods <- c("boot", "boot632", "optimism_boot", "cv", "repeatedcv", "LOOCV", "LGOCV", "none")
+trainmethodperformance_all <- NULL
+for (itrainmethod in trainmethods) {
+  trainmethodperformance <- NULL
+  fitControl <- trainControl(
+    method = itrainmethod,
+    number = 10, #4
+    repeats = 10, #10
+    allowParallel = TRUE,
+    summaryFunction = defaultSummary)
+  
+  registerDoSEQ()
+  registerDoMC(cores = 6)
+  
+  svmRadTrainModel = train(Hunters ~ ., data = COElkHunters,
+                         method = "svmRadial",
+                         tuneGrid = svmRadTuneGrid3,
+                         trControl = fitControl)
+  
+  print(svmRadTrainModel)
+  trainmethodperformance <- filter(svmRadTrainModel$results, RMSE == min(RMSE))
+  trainmethodperformance$trainmethod <- itrainmethod
+  trainmethodperformance_all <- rbind.fill(trainmethodperformance_all,trainmethodperformance)
+}
+
+
+fitControl <- trainControl(
+  method = "optimism_boot",
+  number = 10, #4
+  allowParallel = TRUE,
+  summaryFunction = defaultSummary)
+
+svmRadFinalTrainModel = train(Hunters ~ ., data = COElkHunters,
+                            method = "svmRadial",
+                            tuneGrid = svmRadTuneGrid3,
+                            trControl = fitControl)
+
+# save off for future loading
+save(svmRadFinalTrainModel, file = "~/_code/colorado-dow/datasets/svmRadFinalTrainModel.RData")
+
+# back to train vs test data for one more performance measure and chart... even though
+# for future data we will use the final trained model
+svmRadTrainModel = train(Hunters ~ ., data = traindata,
+                       method = "svmRadial",
+                       tuneGrid = svmRadTuneGrid3,
+                       trControl = fitControl)
+
+# check performance
+predictdata <- predict(svmRadTrainModel, testdata)
+
+postResample(pred = predictdata, obs = testdata$Hunters)
+
+#' Chart performance of predicted
+chartperformance <- data.frame(predicted = predictdata, observed = testdata$Hunters)
+
+ggplot(chartperformance, aes(predicted,observed)) +
+  geom_point() +
+  labs(title="Performance of Number of Hunters Prediction", caption="source: cpw.state.co.us")
+
+#' kknn performed better than svmRadial RMSE=130 vs 154
+FinalHuntersmodel <- kknnFinalTrainModel
+# FinalHuntersmodel <- svmRadFinalTrainModel
+save(FinalHuntersmodel, file = "~/_code/colorado-dow/datasets/FinalHuntersmodel.RData")
+
 
 #' Use the 2018 Draw data to predict the number of hunters in 2018
+COElkHunters
 COElkDraw2018 <- filter(COElkDraw, Year == 2018)
 COElkHunters2018 <- COElkDraw2018[, colnames(COElkDraw2018) %in% c("Unit",FinalHuntersmodel$coefnames)]
 
-COElkHunters2018$Hunters <- predict(FinalHuntersmodel, COElkHunters2018)
+COElkHunters2018 <- as.data.frame(unique(COElkHunters$Unit))
+colnames(COElkHunters2018) <- "Unit"
+COElkHunters2018$Year <- 2018
+COElkHunters2018 <- left_join(COElkHunters2018,filter(COElkDraw,Year==2018))
+#' Replace the draw data that don't have entries with 0
+COElkHunters2018$Drawn[is.na(COElkHunters2018$Drawn)] <- 0
+COElkHunters2018$Quota[is.na(COElkHunters2018$Quota)] <- 0
+
+COElkHunters2018 <- COElkHunters2018[, colnames(COElkHunters2018) %in% c("Unit",FinalHuntersmodel$coefnames)]
+
+COElkHunters2018$Hunters <- round(predict(FinalHuntersmodel, COElkHunters2018))
 
 COElkHunters2018$Hunters[COElkHunters2018$Hunters<0] <- 0
 
@@ -580,7 +706,7 @@ save(COElkHunters2018,file="COElkHunters2018.RData")
 COElkHuntersStatewide <- summarise(group_by(COElkRifleAll,Year,Unit),
                                   Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T))
 COElkHunters2018b <- COElkHunters2018
-COElkHunters2018b$Year <- as.character(COElkHunters2018b$Year)
+# COElkHunters2018b$Year <- as.character(COElkHunters2018b$Year)
 
 #' Join 2018 to historic data
 COElkHuntersAll <- rbind.fill(COElkHuntersStatewide,COElkHunters2018b)
@@ -591,8 +717,17 @@ COElkHuntersStatewide <- summarise(group_by(COElkHuntersAll,Year),
 
 ggplot(COElkHuntersStatewide, aes(Year,Hunters)) +
   geom_bar(stat="identity",fill=ggthemes_data$hc$palettes$default[2]) +
-  coord_cartesian(ylim = c(110000,160000)) +
+  coord_cartesian(ylim = c(130000,155000)) +
   labs(title="Statewide Elk Hunters", caption="source: cpw.state.co.us")
+
+ggplot(filter(COElkHuntersAll,Unit == "77"), aes(Year,Hunters)) +
+  geom_point() +
+  # geom_line() +
+  # scale_x_date() +
+  # geom_bar(stat="identity",fill=ggthemes_data$hc$palettes$default[2]) +
+  # coord_cartesian(ylim = c(110000,160000)) +
+  labs(title="Statewide Elk Hunters", caption="source: cpw.state.co.us")
+
 
 #' > TODO commentary
 #' 
@@ -673,7 +808,7 @@ ggplot(HunterRank2018, aes(x=Unit, y=Hunters)) +
                    xend=Unit, 
                    y=0, 
                    yend=Hunters)) + 
-  labs(title="Elk Hunters 2018\nTop 50 Units", subtitle="Hunters by Unit", caption="source: cpw.state.co.us")
+  labs(title="Predicted Elk Hunters 2018\nTop 50 Units", subtitle="Hunters by Unit", caption="source: cpw.state.co.us")
 #' > TODO - commentary
 #' 
 #' ***

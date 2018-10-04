@@ -110,3 +110,8 @@ for (iunit in ununit) {
 print(paste("Progress",sprintf("%1.2f%%",100*n_distinct(weatherdata5$Unit)/length(ununitall))))
 head(weatherdata5)
 unique(weatherdata5$Unit)
+
+test <- summarise(group_by(weatherdata5,Unit),
+                  totalrows = n(),
+                  nseasons = n_distinct(Season),
+                  nyear = n_distinct(Year))
