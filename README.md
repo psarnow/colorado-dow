@@ -68,7 +68,8 @@ Use machine learning and predictive modeling to forcast future hunt seasons.
 * Model testing
 * Release web service to analyze new data
 
-1. [Predict the number of hunters in each unit](http://rpubs.com/psarnow/425983), then their breakdowns per season.
+1. [Predict the number of hunters in each unit](http://rpubs.com/psarnow/425983), 
+[then their breakdowns per season.](http://rpubs.com/psarnow/427649)
     + Inputs could include Draw Results, historic transportation and lodging costs, median incomes, unemployment rates
 2. Predict the harvest in each unit, then their breakdowns per season.
     + Input predicted number of hunters
