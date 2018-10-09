@@ -5,8 +5,10 @@ output:
   html_notebook:
     toc: yes
     toc_float: false
+    toc_depth: 6
     theme: yeti
     hightlight: default
+    code_folding: none
 ---
 
 
@@ -40,7 +42,7 @@ library(lubridate,quietly = T) # for timing models
 Set our preferred charting theme
 ```{r}
 theme_set(theme_minimal()+theme_hc()+theme(legend.key.width = unit(1.5, "cm")))
-```
+``` 
 
 Run script to get hunter data
 ```{r}
@@ -48,7 +50,10 @@ source('~/_code/colorado-dow/datasets/Colorado Elk Harvest Data.R', echo=F)
 ```
 
 Table of the harvest data
-COElkRifleAll
+```{r}
+head(COElkRifleAll)
+```
+
 
 Run script to get draw data
 ```{r}
@@ -75,10 +80,9 @@ Set to predictive analytics directory
 setwd("~/_code/colorado-dow/phase III - predictive analytics")
 ```
 
-***
-## Organize data
-Will start by grouping all of the seasons together, and modeling the number of hunters per
-Year and Unit
+### Organize data
+Will start by grouping all of the seasons together, and modeling the number of hunters per Year and Unit
+
 Group Draw results data by Year and Unit
 ```{r}
 COElkDraw <- summarise(group_by(COElkDrawAll,Year,Unit),
@@ -133,7 +137,7 @@ Save off for importing into AzureML
 ```{r}
 write.csv(COElkHunters,file = "~/_code/colorado-dow/datasets/COElkHunters.csv",row.names = F)
 ```
-
+### Data Visualization
 notice that the number of hunters data is skewed.
 ```{r fig.width=10}
 ggplot(COElkHunters, aes(Hunters)) + 
@@ -170,6 +174,7 @@ ggplot(trainBC, aes(Hunters)) +
 caret has a preproccess function for correcting for skewness 'BoxCox', we will need to be sure to
 look at using this function in the training models.
 
+***
 ## Model Building
 This is quite an iterative process. It is important to document and save off data.
 Run thru differing 'quick to train' methods
@@ -197,9 +202,9 @@ instead of just running an rscript.
 
 Additonally, AzureML has some additional methods to consider, ensure we attempt to use those as well.
 
-
-Step 1 - Loop through possible methods, utilizing the quicker 'adaptive_cv' parameter search from caret.
-# Consider scripting this into AzureML to make it run much faster, though there is more setup and errors to 
+### Model Training Methods
+Loop through possible methods, utilizing the quicker 'adaptive_cv' parameter search from caret.
+Consider scripting this into AzureML to make it run much faster, though there is more setup and errors to 
 control for
 
 ```{r}
@@ -250,6 +255,7 @@ step1_all
 ```{r}
 top_two_models <- top_n(step1_all,2,-RMSE)$method
 ```
+### More Model Training Methods
 
 Take the top two and determine some additonal methods to try by maximizing the Jaccard
 dissimilarity between sets of models
@@ -258,7 +264,7 @@ tag <- read.csv("tag_data.csv", row.names = 1)
 tag <- as.matrix(tag)
 ```
 
-## Select only models for regression
+Select only models for regression
 ```{r}
 regModels <- tag[tag[,"Regression"] == 1,]
 
@@ -287,6 +293,7 @@ for (itoptwo in 1:2) {
 Now we have 8 more methods to try in the same manner
 ```{r}
 dissimilarmethods_all <- unique(dissimilarmethods_all)
+dissimilarmethods_all
 ```
 ```{r}
 for (imethod in dissimilarmethods_all) {
@@ -331,7 +338,7 @@ for (imethod in dissimilarmethods_all) {
 step1_all
 ```
 
-
+### Preprocessing on Top Modeling Methods
 Now lets work on some refined tuning on the top methods
 Any valuable preprocessing steps?
 ```{r}
@@ -374,29 +381,29 @@ for (imethod in topmethods) {
     PPperformance_all <- rbind(PPperformance_all,PPperformance)
   }
 }
+# Some of the models were loaded into AzureML and processed there.
+# Output from AzureML
+# [ModuleOutput]          method preprocess     RMSE
+# [ModuleOutput] RMSE       kknn     BoxCox 130.7939
+# [ModuleOutput] RMSE1      kknn YeoJohnson 130.9600
+# [ModuleOutput] RMSE2      kknn     center 130.7331
+# [ModuleOutput] RMSE3      kknn      scale 130.1818
+# [ModuleOutput] RMSE4      kknn        pca 130.2071
+# [ModuleOutput] RMSE5 svmRadial     BoxCox 154.0898
+# [ModuleOutput] RMSE6 svmRadial YeoJohnson 169.9816
+# [ModuleOutput] RMSE7 svmRadial     center 154.1891
+# [ModuleOutput] RMSE8 svmRadial      scale 154.1000
+# [ModuleOutput] RMSE9 svmRadial        pca 164.0881
+# svmRadial and kknn don't perform better with any of the preprocessing functions in place
 ```
 ```{r}
 PPperformance_all
 ```
 
-Output from AzureML
-[ModuleOutput]          method preprocess     RMSE
-[ModuleOutput] RMSE       kknn     BoxCox 130.7939
-[ModuleOutput] RMSE1      kknn YeoJohnson 130.9600
-[ModuleOutput] RMSE2      kknn     center 130.7331
-[ModuleOutput] RMSE3      kknn      scale 130.1818
-[ModuleOutput] RMSE4      kknn        pca 130.2071
-[ModuleOutput] RMSE5 svmRadial     BoxCox 154.0898
-[ModuleOutput] RMSE6 svmRadial YeoJohnson 169.9816
-[ModuleOutput] RMSE7 svmRadial     center 154.1891
-[ModuleOutput] RMSE8 svmRadial      scale 154.1000
-[ModuleOutput] RMSE9 svmRadial        pca 164.0881
-svmRadial and kknn don't perform better with any of the preprocessing functions in place
-  
+### Model Predictors
 Now we can review the predictors, there are only a few fields so I will manually test performance
 while excluding each of them to monitor their importance.
 Some of our fields are instinctively required (Year, Unit)
-
 ```{r}
 Predictors <- c("Quota","Drawn")
 Predictorperformance_all <- NULL
@@ -435,7 +442,7 @@ better with only Unit and Year fields
 
 Use above information to test out various combinations of preprocessing and predictor sets
 
-
+##### kknn
 kknn without Quota and Drawn
 ```{r}
 fitControl <- trainControl(
@@ -461,13 +468,15 @@ kknnModel = train(Hunters ~ ., data = select(COElkHunters,-Quota, -Drawn),
 kknnModel
 ```
 
-
-Best RMSE, not sure why caret is selecting parameters with higher RMSE, lets select manually
+Best RMSE
 ```{r}
+# not sure why caret is selecting parameters with higher RMSE, lets select manually
 RSMEkknn <- filter(kknnModel$results, RMSE == min(RMSE))
 RSMEkknn$kernel <- as.character(RSMEkknn$kernel)
+RSMEkknn
 ```
 
+### Model Tuning
 run again with a tune grid
 ```{r}
 kknnTuneGrid <- data.frame(kmax = c(RSMEkknn$kmax,RSMEkknn$kmax,RSMEkknn$kmax,RSMEkknn$kmax,RSMEkknn$kmax),
@@ -494,7 +503,7 @@ kknnGridModel
 ```
 
 
-Best RMSE, not sure why caret is selecting parameters with higher RMSE, lets select manually
+Best RMSE
 ```{r}
 RSMEkknn <- filter(kknnGridModel$results, RMSE == min(RMSE))
 RSMEkknn$kernel <- as.character(RSMEkknn$kernel)
@@ -522,7 +531,7 @@ kknnGridModel2
 
 
 One more time on final parameter (kernel)
-Best RMSE, not sure why caret is selecting parameters with higher RMSE, lets select manually
+Best RMSE
 ```{r}
 RSMEkknn <- filter(kknnGridModel2$results, RMSE == min(RMSE))[1,]
 kernels <- levels(kknnModel$results$kernel)
@@ -611,7 +620,7 @@ save off for future loading
 ```{r}
 save(kknnFinalTrainModel, file = "~/_code/colorado-dow/datasets/kknnFinalTrainModel.RData")
 ```
-
+## Model Testing
 back to train vs test data for one more performance measure and chart... even though
 for future data we will use the final trained model
 ```{r}
@@ -828,13 +837,17 @@ save(FinalHuntersmodel, file = "~/_code/colorado-dow/datasets/FinalHuntersmodel.
 
 Use the 2018 Draw data to predict the number of hunters in 2018
 ```{r}
-COElkDraw2018 <- filter(COElkDraw, Year == 2018)
-COElkHunters2018 <- COElkDraw2018[, colnames(COElkDraw2018) %in% c("Unit",FinalHuntersmodel$coefnames)]
 
+# ensure we include all of the units
 COElkHunters2018 <- as.data.frame(unique(COElkHunters$Unit))
 colnames(COElkHunters2018) <- "Unit"
 COElkHunters2018$Year <- 2018
-COElkHunters2018 <- left_join(COElkHunters2018,filter(COElkDraw,Year==2018))
+
+# Draw data for 2018
+COElkDraw2018 <- filter(COElkDraw, Year == 2018)
+
+# A left join will autofill missing draw data with NAs, but will retain the full list of Units
+COElkHunters2018 <- left_join(COElkHunters2018,COElkDraw2018)
 # Replace the draw data that don't have entries with 0
 COElkHunters2018$Drawn[is.na(COElkHunters2018$Drawn)] <- 0
 COElkHunters2018$Quota[is.na(COElkHunters2018$Quota)] <- 0
