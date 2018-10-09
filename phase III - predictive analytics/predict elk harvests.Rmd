@@ -1,0 +1,134 @@
+---
+title: "Predict Future Elk Harvest"
+author: "Pierre Sarnow"
+output:
+  html_notebook:
+    toc: yes
+    toc_float: false
+    toc_depth: 6
+    theme: yeti
+    hightlight: default
+    code_folding: none
+---
+***
+## Description
+Use historical harvests, number of hunters, and weather data to predict the harvest for the upcoming hunting seasons.
+
+*__NOTICE__ that I am only looking at the general rifle hunting seasons on public land. There are also 
+hunters for Archery, Muzzleloader, Private Land, Ranching for Wildlife, etc.*
+
+***
+## Setup
+Load required libraries for wrangling data, charting, and mapping
+```{r}
+library(plyr,quietly = T) # data wrangling
+library(dplyr,quietly = T) # data wrangling
+library(ggplot2, quietly = T) # charting
+library(ggthemes,quietly = T) # so I can add the highcharts theme and palette
+library(scales,quietly = T) # to load the percent function when labeling plots
+library(caret,quietly = T) # classification and regression training
+library(foreach,quietly = T) # parallel processing to speed up the model training
+library(doMC,quietly = T) # parallel processing to speed up the model training
+library(lubridate,quietly = T) # for timing models
+```
+
+Set our preferred charting theme
+```{r}
+theme_set(theme_minimal()+theme_hc()+theme(legend.key.width = unit(1.5, "cm")))
+``` 
+
+Run script to get hunter data
+```{r}
+source('~/_code/colorado-dow/datasets/Colorado Elk Harvest Data.R', echo=F)
+```
+
+Table of the harvest data
+```{r}
+head(COElkRifleAll)
+```
+
+
+Load the weather data
+```{r}
+load("weatherdata5.RData")
+head(weatherdata5)
+```
+
+source geodata
+```{r}
+source('~/_code/colorado-dow/datasets/Colorado GMUnit and Road data.R', echo=F)
+```
+
+Take a peak at the boundary data
+```{r}
+head(Unitboundaries2)
+```
+
+Set to predictive analytics directory
+```{r}
+setwd("~/_code/colorado-dow/phase III - predictive analytics")
+```
+***
+### Organize data
+I could also use the harvest and population estimates to create another elk population number, might be useful
+in predicting. 
+Because there are some elk not accounted for in DecemberPopulation = JanuaryPopulation - FallHarvest
+
+Group weather data by year
+```{r}
+UnitWeather <- summarise(group_by(weatherdata5,Year,Unit),
+                         daily.temperatureHigh = max(daily.temperatureHigh,na.rm = T),
+                         daily.temperatureLow = min(daily.temperatureLow,na.rm = T),
+                         daily.temperatureMean = mean(daily.temperatureMean,na.rm = T),
+                         daily.precipAccumulation = mean(daily.precipAccumulation,na.rm = T),
+                         daily.precipType = mean(daily.precipType,na.rm = T),
+                         daily.windSpeed = mean(daily.windSpeed,na.rm = T),
+                         daily.FullmoonPhase = mean(daily.FullmoonPhase,na.rm = T))
+```
+
+Appropriate field classes for model training
+```{r}
+UnitWeather$Year <- as.numeric(UnitWeather$Year)
+```
+
+Group Hunter data by Year and Unit
+```{r}
+COElkHarvest <- summarise(group_by(COElkRifleAll,Year,Unit),
+                          Harvest = sum(c(Harvest.Antlered,Harvest.Antlerless),na.rm = T),
+                          Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T))
+
+COElkHarvest$Year <- as.numeric(COElkHarvest$Year)
+```
+
+Join Harvest, Hunter, and Weather data
+```{r}
+COElkHarvest <- full_join(COElkHarvest, UnitWeather, by = c("Year","Unit"))
+```
+
+Remove rows with missing data
+```{r}
+COElkHarvest <- filter(COElkHarvest, !is.na(Harvest) & !is.na(daily.temperatureMean) & Year != 2018)
+```
+
+Split into train and test sets. Will use 75% of the data to train on. 
+
+```{r}
+COElkHarvest <- mutate(group_by(COElkHarvest,Unit),
+                       numentries = n())
+COElkHarvest <- filter(COElkHarvest, numentries >= 3)
+COElkHarvest$UnitYear <- paste(COElkHarvest$Unit, COElkHarvest$Year)
+
+traindata <- COElkHarvest %>% group_by(Unit) %>% sample_frac(size = .75, replace = F)
+testdata <- COElkHarvest[!COElkHarvest$UnitYear %in% traindata$UnitYear,]
+
+COElkHarvest <- select(COElkHarvest, -UnitYear, -numentries)
+
+traindata <- select(traindata, -UnitYear, -numentries)
+testdata <- select(testdata, -UnitYear, -numentries)
+```
+
+Save off for importing into AzureML
+```{r}
+write.csv(COElkHarvest,file = "~/_code/colorado-dow/datasets/COElkHarvest.csv",row.names = F)
+```
+
