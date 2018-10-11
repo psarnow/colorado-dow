@@ -249,6 +249,7 @@ HuntersModel_1_Unit = train(Hunters ~ ., data = COElkHunters_Unit,
   
 HuntersModel_1_Unit
 ```
+
 Predict Hunter for next year, 2018
 ```{r}
 # Get list of Units and Seasons that will have data
@@ -326,7 +327,7 @@ ggplot(Hunters_Season_77, aes(Year,Hunters,group=Season,fill=Season)) +
   geom_bar(position="dodge",stat="identity") +
   # coord_cartesian(ylim = c(130000,155000)) +
   scale_fill_hc() +
-  labs(title="Statewide Elk Hunters", caption="source: cpw.state.co.us")
+  labs(title="Unit 77 Elk Hunters", caption="source: cpw.state.co.us")
 ```
 
 

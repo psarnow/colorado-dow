@@ -132,3 +132,130 @@ Save off for importing into AzureML
 write.csv(COElkHarvest,file = "~/_code/colorado-dow/datasets/COElkHarvest.csv",row.names = F)
 ```
 
+***
+## Model Building
+
+### Model Training Methods
+Loop through possible methods, utilizing the quicker 'adaptive_cv' parameter search from caret.
+Consider scripting this into AzureML to make it run much faster, though there is more setup and errors to 
+control for
+
+```{r}
+quickmethods <- c("lm",'svmLinear',"svmRadial","knn","cubist","kknn")
+
+step1_all <- NULL
+for (imethod in quickmethods) {
+  step1 <- NULL
+  start <- now()
+  
+  if (imethod == "lm" | imethod == "svmLinear") {
+    controlmethod <- "repeatedcv"
+  } else {controlmethod <- "adaptive_cv"}
+  
+  fitControl <- trainControl(
+    method = controlmethod,
+    # search = 'random',
+    number = 4,
+    repeats = 4,
+    allowParallel = TRUE,
+    summaryFunction = defaultSummary)
+  
+  registerDoSEQ()
+  registerDoMC(cores = 6)
+  
+  HarvestModel_1 = train(Harvest ~ ., data = traindata,
+                         method = imethod,
+                         #preProc = c("center","scale"), 
+                         tuneLength = 15,
+                         trControl = fitControl)
+  
+  HarvestModel_1
+  
+  # measure performance
+  predictdata <- predict(HarvestModel_1, testdata)
+  
+  step1$method <- imethod
+  step1$RMSE <- postResample(pred = predictdata, obs = testdata$Harvest)[1]
+  step1$duration <- now() - start
+  step1 <- as.data.frame(step1)
+  step1_all <- rbind(step1_all,step1)
+}
+```
+View Results
+```{r}
+step1_all
+```
+Run the best model with all of the data
+```{r}
+fitControl <- trainControl(
+    method = "repeatedcv",
+    # search = 'random',
+    number = 4,
+    repeats = 4,
+    allowParallel = TRUE,
+    summaryFunction = defaultSummary)
+  
+registerDoSEQ()
+registerDoMC(cores = 6)
+  
+HarvestModel_1 = train(Harvest ~ ., data = COElkHarvest,
+                         method = 'lm',
+                         #preProc = c("center","scale"), 
+                         tuneLength = 15,
+                         trControl = fitControl)
+  
+HarvestModel_1
+```
+
+## Predict Hunter for next year, 2018
+```{r}
+# Get 2018 Hunters from the Hunters Predicted model
+load("~/_code/colorado-dow/datasets/COElkHunters2018_Season.RData")
+
+COElkHunters2018Predicted <- summarise(group_by(COElkHunters2018_Season, Year, Unit),
+                                       Hunters = sum(Hunters,na.rm = T))
+
+# ensure we include all of the units
+COElkHarvest2018 <- as.data.frame(unique(COElkHarvest$Unit))
+colnames(COElkHarvest2018) <- "Unit"
+COElkHarvest2018$Year <- 2018
+
+# Weather data for 2018
+UnitWeather2018 <- filter(UnitWeather,Year==2018)
+
+# A left join will autofill missing draw data with NAs, but will retain the full list of Units
+COElkHarvest2018 <- left_join(COElkHarvest2018,UnitWeather2018)
+
+# Join in forecasted Hunters
+COElkHarvest2018 <- left_join(COElkHarvest2018,COElkHunters2018Predicted)
+# Replace the hunter data with missing entries
+COElkHarvest2018$Hunters[is.na(COElkHarvest2018$Hunters)] <- 0
+
+COElkHarvest2018 <- COElkHarvest2018[, colnames(COElkHarvest2018) %in% c("Unit",HarvestModel_1$coefnames)]
+
+COElkHarvest2018$Harvest <- predict(HarvestModel_1, COElkHarvest2018)
+COElkHarvest2018$Harvest[COElkHarvest2018$Harvest<0] <- 0
+
+# Combine with historic data
+COElkHarvestAll <- rbind.fill(COElkHarvest,COElkHarvest2018)
+```
+***
+## View results
+```{r fig.width=10}
+ggplot(COElkHarvestAll, aes(Year,Harvest)) +
+  geom_bar(position="dodge",stat="identity") +
+  # coord_cartesian(ylim = c(130000,155000)) +
+  scale_fill_hc() +
+  labs(title="Statewide Elk Harvest", caption="source: cpw.state.co.us")
+```
+
+```{r fig.width=10}
+Harvest_77 <- filter(COElkHarvestAll, Unit == "77")
+ggplot(Harvest_77, aes(Year,Harvest)) +
+  geom_bar(position="dodge",stat="identity") +
+  # coord_cartesian(ylim = c(130000,155000)) +
+  scale_fill_hc() +
+  labs(title="Unit 77 Elk Harvest", caption="source: cpw.state.co.us")
+```
+
+
