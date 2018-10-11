@@ -71,7 +71,7 @@ Use machine learning and predictive modeling to forcast future hunt seasons.
 1. [Predict the number of hunters in each unit](http://rpubs.com/psarnow/425983), 
 [then their breakdowns per season.](http://rpubs.com/psarnow/427649)
     + Inputs could include Draw Results, historic transportation and lodging costs, median incomes, unemployment rates
-2. Predict the harvest in each unit, then their breakdowns per season.
+2. [Predict the harvest in each unit,](http://rpubs.com/psarnow/428365) then their breakdowns per season.
     + Input predicted number of hunters
     + Additional inputs could include forecasted weather
 3. Predict the post hunt elk population
