@@ -1,0 +1,308 @@
+---
+title: "Predict Future Elk Harvest by Season"
+author: "Pierre Sarnow"
+output:
+  html_notebook:
+    toc: yes
+    toc_float: false
+    toc_depth: 6
+    theme: yeti
+    hightlight: default
+    code_folding: none
+---
+***
+## Description
+Use historical harvests, number of hunters, and weather data to predict the harvest for the upcoming hunting seasons.
+
+*__NOTICE__ that I am only looking at the general rifle hunting seasons on public land. There are also 
+hunters for Archery, Muzzleloader, Private Land, Ranching for Wildlife, etc.*
+
+***
+## Setup
+Load required libraries for wrangling data, charting, and mapping
+```{r}
+library(plyr,quietly = T) # data wrangling
+library(dplyr,quietly = T) # data wrangling
+library(ggplot2, quietly = T) # charting
+library(ggthemes,quietly = T) # so I can add the highcharts theme and palette
+library(scales,quietly = T) # to load the percent function when labeling plots
+library(caret,quietly = T) # classification and regression training
+library(foreach,quietly = T) # parallel processing to speed up the model training
+library(doMC,quietly = T) # parallel processing to speed up the model training
+library(lubridate,quietly = T) # for timing models
+```
+
+Set our preferred charting theme
+```{r}
+theme_set(theme_minimal()+theme_hc()+theme(legend.key.width = unit(1.5, "cm")))
+``` 
+
+Run script to get hunter data
+```{r}
+source('~/_code/colorado-dow/datasets/Colorado Elk Harvest Data.R', echo=F)
+```
+
+Table of the harvest data
+```{r}
+head(COElkRifleAll)
+```
+
+
+Load the weather data
+```{r}
+load("weatherdata5.RData")
+head(weatherdata5)
+```
+
+source geodata
+```{r}
+source('~/_code/colorado-dow/datasets/Colorado GMUnit and Road data.R', echo=F)
+```
+
+Take a peak at the boundary data
+```{r}
+head(Unitboundaries2)
+```
+
+Set to predictive analytics directory
+```{r}
+setwd("~/_code/colorado-dow/phase III - predictive analytics")
+```
+***
+### Organize data
+
+Group weather data by year, and season
+```{r}
+UnitWeather_Season <- summarise(group_by(weatherdata5,Year,Unit,Season),
+                         daily.temperatureHigh = max(daily.temperatureHigh,na.rm = T),
+                         daily.temperatureLow = min(daily.temperatureLow,na.rm = T),
+                         daily.temperatureMean = mean(daily.temperatureMean,na.rm = T),
+                         daily.precipAccumulation = mean(daily.precipAccumulation,na.rm = T),
+                         daily.precipType = mean(daily.precipType,na.rm = T),
+                         daily.windSpeed = mean(daily.windSpeed,na.rm = T),
+                         daily.FullmoonPhase = mean(daily.FullmoonPhase,na.rm = T))
+```
+
+Appropriate field classes for model training
+```{r}
+UnitWeather_Season$Year <- as.numeric(UnitWeather_Season$Year)
+```
+
+Group Hunter data by Year, Season, and Unit
+```{r}
+COElkHarvest_Season <- summarise(group_by(COElkRifleAll,Year,Unit,Season),
+                          Harvest = sum(c(Harvest.Antlered,Harvest.Antlerless),na.rm = T),
+                          Hunters = sum(c(Hunters.Antlered,Hunters.Antlerless,Hunters.Either),na.rm = T))
+
+COElkHarvest_Season$Year <- as.numeric(COElkHarvest_Season$Year)
+```
+
+Join Harvest, Hunter, and Weather data
+```{r}
+COElkHarvest_Season <- full_join(COElkHarvest_Season, UnitWeather_Season, by = c("Year","Unit","Season"))
+```
+
+Remove rows with missing data
+```{r}
+COElkHarvest_Season <- filter(COElkHarvest_Season, !is.na(Harvest) & !is.na(daily.temperatureMean) & Year != 2018)
+```
+
+Split into train and test sets. Will use 75% of the data to train on. 
+
+```{r}
+COElkHarvest_Season <- mutate(group_by(COElkHarvest_Season,Unit),
+                       numentries = n())
+COElkHarvest_Season <- filter(COElkHarvest_Season, numentries >= 3)
+COElkHarvest_Season$UnitYearSeason <- paste(COElkHarvest_Season$Unit, COElkHarvest_Season$Year,COElkHarvest_Season$Season)
+
+traindata2 <- COElkHarvest_Season %>% group_by(Unit) %>% sample_frac(size = .75, replace = F)
+testdata2 <- COElkHarvest_Season[!COElkHarvest_Season$UnitYearSeason %in% traindata2$UnitYearSeason,]
+
+COElkHarvest_Season <- select(COElkHarvest_Season, -UnitYearSeason, -numentries)
+
+traindata2 <- select(traindata2, -UnitYearSeason, -numentries)
+testdata2 <- select(testdata2, -UnitYearSeason, -numentries)
+```
+
+Save off for importing into AzureML
+```{r}
+write.csv(COElkHarvest_Season,file = "~/_code/colorado-dow/datasets/COElkHarvest_Season.csv",row.names = F)
+```
+
+***
+## Model Building
+
+### Model Training Methods
+Loop through possible methods, utilizing the quicker 'adaptive_cv' parameter search from caret.
+Consider scripting this into AzureML to make it run much faster, though there is more setup and errors to 
+control for
+
+```{r}
+quickmethods <- c("lm",'svmLinear',"svmRadial","knn","cubist","kknn")
+
+step1_Season_all <- NULL
+for (imethod in quickmethods) {
+  step1_Season <- NULL
+  start <- now()
+  
+  if (imethod == "lm" | imethod == "svmLinear") {
+    controlmethod <- "repeatedcv"
+  } else {controlmethod <- "adaptive_cv"}
+  
+  fitControl <- trainControl(
+    method = controlmethod,
+    # search = 'random',
+    number = 4,
+    repeats = 4,
+    allowParallel = TRUE,
+    summaryFunction = defaultSummary)
+  
+  registerDoSEQ()
+  registerDoMC(cores = 6)
+  
+  HarvestModel_1_Season = train(Harvest ~ ., data = traindata2,
+                         method = imethod,
+                         #preProc = c("center","scale"), 
+                         tuneLength = 15,
+                         trControl = fitControl)
+  
+  HarvestModel_1_Season
+  
+  # measure performance
+  predictdata <- predict(HarvestModel_1_Season, testdata2)
+  
+  step1_Season$method <- imethod
+  step1_Season$RMSE <- postResample(pred = predictdata, obs = testdata2$Harvest)[1]
+  step1_Season$duration <- now() - start
+  step1_Season <- as.data.frame(step1_Season)
+  step1_Season_all <- rbind(step1_Season_all,step1_Season)
+}
+```
+View Results, and compare to previous first models that did not expand to Seasons
+```{r}
+step1_all
+step1_Season_all
+```
+The performance RMSE metric is certainly improved when including the Seasonal grouping.
+Lets take the best method, and see if it is visually reasonable while also charting without Seasons.
+
+### Predictions using best Season model
+Run the best model with all of the data
+```{r}
+fitControl <- trainControl(
+    method = "adaptive_cv",
+    # search = 'random',
+    number = 4,
+    repeats = 4,
+    allowParallel = TRUE,
+    summaryFunction = defaultSummary)
+  
+registerDoSEQ()
+registerDoMC(cores = 6)
+  
+HarvestModel_1_Season = train(Harvest ~ ., data = COElkHarvest_Season,
+                         method = 'cubist',
+                         #preProc = c("center","scale"), 
+                         tuneLength = 15,
+                         trControl = fitControl)
+  
+HarvestModel_1_Season
+```
+
+## Predict Hunter for next year, 2018
+```{r}
+# Get 2018 Hunters from the Hunters Predicted model
+load("~/_code/colorado-dow/datasets/COElkHunters2018_Season.RData")
+
+COElkHunters_Season2018Predicted <- summarise(group_by(COElkHunters2018_Season, Year, Unit,Season),
+                                       Hunters = sum(Hunters,na.rm = T))
+
+# Get list of Units and Seasons that will have data
+COElkHarvest2018_Season <- COElkHarvest_Season
+COElkHarvest2018_Season$Unit_Season <- paste(COElkHarvest2018_Season$Unit,COElkHarvest2018_Season$Season)
+COElkHarvest2018_Season <- as.data.frame(unique(COElkHarvest2018_Season$Unit_Season))
+colnames(COElkHarvest2018_Season) <- "Unit_Season"
+# Fill in missing Units and Seasons per unique Unit_Seasons
+COElkHarvest2018_Season$Unit <- str_extract(COElkHarvest2018_Season$Unit_Season,"[:alnum:]+(?=[:blank:])")
+COElkHarvest2018_Season$Season <- str_extract(COElkHarvest2018_Season$Unit_Season,"(?<=[:blank:])[:alnum:]+")
+COElkHarvest2018_Season <- select(COElkHarvest2018_Season, -Unit_Season)
+COElkHarvest2018_Season$Year <- 2018
+
+# Weather data for 2018
+UnitWeather_Season2018 <- filter(UnitWeather_Season,Year==2018)
+
+# A left join will autofill missing draw data with NAs, but will retain the full list of Unit Seasons
+COElkHarvest2018_Season <- left_join(COElkHarvest2018_Season,UnitWeather_Season2018)
+
+# Join in forecasted Hunters
+COElkHarvest2018_Season <- left_join(COElkHarvest2018_Season,COElkHunters_Season2018Predicted)
+
+# Only use the fields that were included in the model
+COElkHarvest2018_Season <- COElkHarvest2018_Season[, colnames(COElkHarvest2018_Season) %in% c("Unit","Season",HarvestModel_1_Season$coefnames)]
+
+# Use trained model to predict Harvest
+COElkHarvest2018_Season$Harvest <- round(predict(HarvestModel_1_Season, COElkHarvest2018_Season))
+
+COElkHarvest2018_Season$Harvest[COElkHarvest2018_Season$Harvest<0] <- 0
+
+# Combine with historic data
+COElkHarvestAll_Season <- rbind.fill(COElkHarvest_Season,COElkHarvest2018_Season)
+```
+Save off so we don't have to recreate the model everytime we want the results
+```{r}
+save(COElkHarvest2018_Season,file="~/_code/colorado-dow/datasets/COElkHarvest2018_Season.RData")
+```
+
+Label and Join models together for comparisons
+```{r}
+# Load first model without Seasons
+load("~/_code/colorado-dow/datasets/COElkHarvest2018.RData")
+Harvestcompare <- rbind.fill(COElkHarvest,COElkHarvest2018)
+Harvestcompare$modeldata <- "Without Seasons"
+
+Harvestcompare_Season <- rbind.fill(COElkHarvest_Season,COElkHarvest2018_Season)
+Harvestcompare_Season <- summarise(group_by(Harvestcompare_Season,Year,Unit),
+                                   Harvest = sum(Harvest))
+Harvestcompare_Season$modeldata <- "Seasons"
+
+Harvestcompare <- rbind.fill(Harvestcompare,Harvestcompare_Season)
+
+```
+```{r}
+# Group Units
+HarvestcompareStatewide <- summarise(group_by(Harvestcompare,Year,modeldata),
+                                   Harvest = sum(Harvest))
+```
+
+```{r fig.width=10}
+ggplot(HarvestcompareStatewide, aes(Year,Harvest,group=modeldata,fill=modeldata)) +
+  geom_bar(position="dodge",stat="identity") +
+  # coord_cartesian(ylim = c(130000,155000)) +
+  scale_fill_hc() +
+  labs(title="Statewide Elk Harvest", caption="source: cpw.state.co.us")
+```
+
+#### Harvest Statewide by Season and Year
+```{r fig.width=10}
+Harvest_Season <- rbind.fill(COElkHarvest_Season,COElkHarvest2018_Season)
+ggplot(Harvest_Season, aes(Year,Harvest,group=Season,fill=Season)) +
+  geom_bar(position="dodge",stat="identity") +
+  # coord_cartesian(ylim = c(130000,155000)) +
+  scale_fill_hc() +
+  labs(title="Statewide Elk Harvest", caption="source: cpw.state.co.us")
+```
+
+#### Harvest in Unit 77
+```{r fig.width=10}
+Harvest_Season_77 <- filter(Harvest_Season, Unit == "77")
+ggplot(Harvest_Season_77, aes(Year,Harvest,group=Season,fill=Season)) +
+  geom_bar(position="dodge",stat="identity") +
+  # coord_cartesian(ylim = c(130000,155000)) +
+  scale_fill_hc() +
+  labs(title="Unit 77 Elk Harvest", caption="source: cpw.state.co.us")
+```
+
+
+
+
+

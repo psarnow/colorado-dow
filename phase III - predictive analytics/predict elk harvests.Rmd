@@ -239,6 +239,11 @@ COElkHarvest2018$Harvest[COElkHarvest2018$Harvest<0] <- 0
 # Combine with historic data
 COElkHarvestAll <- rbind.fill(COElkHarvest,COElkHarvest2018)
 ```
+Save off so we don't have to recreate the model everytime we want the results
+```{r}
+save(COElkHarvest2018,file="~/_code/colorado-dow/datasets/COElkHarvest2018.RData")
+```
+
 ***
 ## View results
 ```{r fig.width=10}
